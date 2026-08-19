@@ -101,6 +101,29 @@ describe("POST /api/designs", () => {
     expect(prompt).toContain("Não adicione melhorias, objetos ou decoração por iniciativa própria");
   });
 
+  it("accepts the three-step intake without area or finish fields", async () => {
+    process.env.OBRIA_PROVIDER_MODE = "live";
+    process.env.OPENAI_API_KEY = "test-key";
+    let submittedForm: FormData | undefined;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      submittedForm = init?.body as FormData;
+      return Response.json({ data: [{ b64_json: "/9j/2Q==" }, { b64_json: "/9j/2Q==" }] });
+    });
+    const response = await POST(new Request("http://localhost/api/designs", {
+      method: "POST",
+      body: JSON.stringify({
+        sourceImageDataUri: "data:image/jpeg;base64,/9j/2Q==",
+        request: "Adicione uma almofada azul sobre o sofá.",
+        roomType: "living_room",
+        city: "São Paulo",
+        uf: "SP",
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(String(submittedForm?.get("prompt"))).toContain("Área aproximada: não informada");
+  });
+
   it("fails visibly before exceeding the Vercel response limit", async () => {
     process.env.OBRIA_PROVIDER_MODE = "live";
     process.env.OPENAI_API_KEY = "test-key";

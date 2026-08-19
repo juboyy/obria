@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { projectFlowGateway, type GenerationVariant, type ProjectDraft } from "@/integrations/project-flow";
-import type { FinishTier, RoomType } from "@/types";
+import { MARKETPLACE_STORAGE_KEY, serializeMarketplaceProject } from "@/integrations/marketplace-session";
+import type { RoomType } from "@/types";
 
-type GuidedStep = "location" | "room" | "area" | "finish" | "request";
+type GuidedStep = "location" | "room" | "request";
 type Step = "photo" | GuidedStep | "generating" | "gallery" | "review" | "complete";
 type CameraStatus = "starting" | "live" | "unavailable";
 type FacingMode = "environment" | "user";
@@ -19,18 +20,11 @@ const rooms: Array<{ value: RoomType; label: string }> = [
   { value: "other", label: "Outro" },
 ];
 
-const finishes: Array<{ value: FinishTier; label: string }> = [
-  { value: "economy", label: "Econômico" },
-  { value: "standard", label: "Padrão" },
-  { value: "premium", label: "Premium" },
-];
 
 const stepNumber: Record<GuidedStep, number> = {
   location: 1,
   room: 2,
-  area: 3,
-  finish: 4,
-  request: 5,
+  request: 3,
 };
 
 export function MobileIntakeFlow() {
@@ -46,8 +40,6 @@ export function MobileIntakeFlow() {
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [location, setLocation] = useState("");
   const [roomType, setRoomType] = useState<RoomType | null>(null);
-  const [area, setArea] = useState("");
-  const [finishTier, setFinishTier] = useState<FinishTier | null>(null);
   const [request, setRequest] = useState("");
   const [variants, setVariants] = useState<GenerationVariant[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -122,14 +114,11 @@ export function MobileIntakeFlow() {
   }, [previewUrl, stopCamera]);
 
   const roomLabel = rooms.find((room) => room.value === roomType)?.label;
-  const finishLabel = finishes.find((finish) => finish.value === finishTier)?.label;
   const selected = variants.find((variant) => variant.id === selectedId) ?? variants[0];
   const answers = useMemo(() => [
     location,
     roomLabel,
-    area ? `${area} m²` : "",
-    finishLabel,
-  ].filter(Boolean), [area, finishLabel, location, roomLabel]);
+  ].filter(Boolean), [location, roomLabel]);
 
   function choosePhoto(file?: File) {
     if (!file || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -169,13 +158,13 @@ export function MobileIntakeFlow() {
   }
 
   async function generate() {
-    if (!photo || !location || !roomType || !finishTier || !Number(area.replace(",", ".")) || request.trim().length < 10) return;
+    if (!photo || !location || !roomType || request.trim().length < 10) return;
     const draft: ProjectDraft = {
       location: { source: "manual", label: location },
       roomType,
       roomLabel: roomLabel ?? "Ambiente",
-      areaM2: Number(area.replace(",", ".")),
-      finishTier,
+      areaM2: null,
+      finishTier: null,
       instruction: request.trim(),
     };
     setStep("generating");
@@ -191,6 +180,27 @@ export function MobileIntakeFlow() {
     }
   }
 
+  function confirmProposal() {
+    if (!selected || !roomLabel) return;
+    try {
+      sessionStorage.setItem(MARKETPLACE_STORAGE_KEY, serializeMarketplaceProject({
+        imageUrl: selected.image.url,
+        variantLabel: selected.label,
+        title: selected.titlePtBr,
+        description: selected.descriptionPtBr,
+        roomLabel,
+        location,
+        areaM2: null,
+        finishLabel: null,
+        request,
+      }));
+      setError("");
+      setStep("complete");
+    } catch {
+      setError("Não foi possível preparar o marketplace neste navegador. Libere espaço e tente novamente.");
+    }
+  }
+
   function resetJourney() {
     stopCamera();
     if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -201,8 +211,6 @@ export function MobileIntakeFlow() {
     setCameraMessage("");
     setLocation("");
     setRoomType(null);
-    setArea("");
-    setFinishTier(null);
     setRequest("");
     setVariants([]);
     setSelectedId("");
@@ -279,8 +287,8 @@ export function MobileIntakeFlow() {
     return (
       <main className="chat-shell chat-shell--result">
         <header className="chat-header"><button className="header-back" type="button" onClick={() => setStep("gallery")} aria-label="Voltar às propostas">‹</button><span className="flow-brand"><i aria-hidden="true">◒</i> ObrIA</span><span>Proposta {selected.label}</span></header>
-        <section className="result-content"><p className="flow-kicker">Sua escolha</p><h1>Essa é a direção do projeto.</h1><div className="result-hero"><img src={selected.image.url} alt={selected.image.altPtBr} /><span>Proposta {selected.label}</span></div><div className="result-copy"><h2>{selected.titlePtBr}</h2><p>{selected.descriptionPtBr}</p></div><dl className="result-details"><div><dt>Ambiente</dt><dd>{roomLabel}</dd></div><div><dt>Local</dt><dd>{location}</dd></div><div><dt>Área</dt><dd>{area} m²</dd></div><div><dt>Acabamento</dt><dd>{finishLabel}</dd></div></dl><blockquote>{request}</blockquote></section>
-        <div className="result-actions"><Button variant="secondary" onClick={() => setStep("gallery")}>Trocar escolha</Button><Button onClick={() => setStep("complete")}>Confirmar proposta</Button></div>
+        <section className="result-content"><p className="flow-kicker">Sua escolha</p><h1>Essa é a direção do projeto.</h1><div className="result-hero"><img src={selected.image.url} alt={selected.image.altPtBr} /><span>Proposta {selected.label}</span></div><div className="result-copy"><h2>{selected.titlePtBr}</h2><p>{selected.descriptionPtBr}</p></div><dl className="result-details"><div><dt>Ambiente</dt><dd>{roomLabel}</dd></div><div><dt>Local</dt><dd>{location}</dd></div></dl><blockquote>{request}</blockquote>{error ? <p className="field__error" role="alert">{error}</p> : null}</section>
+        <div className="result-actions"><Button variant="secondary" onClick={() => setStep("gallery")}>Trocar escolha</Button><Button onClick={confirmProposal}>Confirmar proposta</Button></div>
       </main>
     );
   }
@@ -290,27 +298,26 @@ export function MobileIntakeFlow() {
       <main className="chat-shell chat-shell--result">
         <header className="chat-header"><span className="flow-brand"><i aria-hidden="true">◒</i> ObrIA</span><span>Projeto pronto</span></header>
         <section className="result-content result-content--complete"><div className="result-check" aria-hidden="true">✓</div><p className="flow-kicker">Concluído</p><h1>Sua proposta visual está pronta.</h1><p className="flow-copy">Baixe a imagem para guardar e usar como referência nas próximas decisões da reforma.</p><div className="result-hero"><img src={selected.image.url} alt={selected.image.altPtBr} /><span>Proposta {selected.label}</span></div></section>
-        <div className="complete-actions"><a className="button button--primary button--default button--full" href={selected.image.url} download={`obria-proposta-${selected.label.toLowerCase()}.jpg`}><span>Baixar imagem</span></a><Button variant="secondary" fullWidth onClick={resetJourney}>Criar outro projeto</Button></div>
+        <div className="complete-actions"><a className="button button--primary button--default button--full" href="/marketplace"><span>Abrir agente do marketplace</span></a><a className="button button--secondary button--default button--full" href={selected.image.url} download={`obria-proposta-${selected.label.toLowerCase()}.jpg`}><span>Baixar imagem</span></a><Button variant="ghost" fullWidth onClick={resetJourney}>Criar outro projeto</Button></div>
       </main>
     );
   }
 
   const guidedStep = step as GuidedStep;
-  const prompt = guidedStep === "location" ? "Onde fica o imóvel? Informe cidade e UF." : guidedStep === "room" ? "Qual ambiente vamos transformar?" : guidedStep === "area" ? "Qual é a área aproximada em m²?" : guidedStep === "finish" ? "Qual nível de acabamento você prefere?" : "O que você quer adicionar ou mudar neste espaço?";
+  const prompt = guidedStep === "location" ? "Onde fica o imóvel? Informe cidade e UF." : guidedStep === "room" ? "Qual ambiente vamos transformar?" : "Agora me diga, com suas palavras, o que você quer mudar.";
   return (
     <main className="chat-shell">
       <header className="chat-header"><span className="flow-brand"><i aria-hidden="true">◒</i> ObrIA</span><span>Projeto guiado</span></header>
-      <div className="chat-progress"><div className="chat-progress__copy"><strong>{guidedStep === "request" ? "Sua ideia" : "Contexto"}</strong><span>Etapa {stepNumber[guidedStep]} de 5</span></div><div className="chat-progress__track"><span style={{ width: `${stepNumber[guidedStep] * 20}%` }} /></div></div>
+      <div className="chat-progress"><div className="chat-progress__copy"><strong>{guidedStep === "request" ? "Sua ideia" : "Contexto essencial"}</strong><span>Etapa {stepNumber[guidedStep]} de 3</span></div><div className="chat-progress__track"><span style={{ width: `${(stepNumber[guidedStep] / 3) * 100}%` }} /></div></div>
       <div className="chat-photo"><img src={previewUrl} alt="Ambiente do projeto" /><span>Foto do ambiente</span></div>
-      <section className="chat-box" aria-label="Conversa guiada do projeto"><div className="chat-thread">{answers.map((answer) => <div className="chat-bubble chat-bubble--user" key={answer}>{answer}</div>)}<div className="chat-bubble chat-bubble--assistant chat-prompt"><span>{prompt}</span></div><ChatAnswer step={guidedStep} value={guidedStep === "location" ? location : guidedStep === "area" ? area : request} onValue={guidedStep === "location" ? setLocation : guidedStep === "area" ? setArea : setRequest} roomType={roomType} finishTier={finishTier} onRoom={(value) => { setRoomType(value); setStep("area"); }} onFinish={(value) => { setFinishTier(value); setStep("request"); }} onNext={() => { if (guidedStep === "location" && location.trim().length >= 3) setStep("room"); else if (guidedStep === "area" && Number(area.replace(",", ".")) > 0) setStep("finish"); else if (guidedStep === "request") void generate(); }} /></div></section>
+      <section className="chat-box" aria-label="Conversa guiada do projeto"><div className="chat-thread">{answers.map((answer) => <div className="chat-bubble chat-bubble--user" key={answer}>{answer}</div>)}<div className="chat-bubble chat-bubble--assistant chat-prompt"><span>{prompt}</span></div><ChatAnswer step={guidedStep} value={guidedStep === "location" ? location : request} onValue={guidedStep === "location" ? setLocation : setRequest} roomType={roomType} onRoom={(value) => { setRoomType(value); setStep("request"); }} onNext={() => { if (guidedStep === "location" && location.trim().length >= 3) setStep("room"); else if (guidedStep === "request") void generate(); }} /></div></section>
       {error ? <p className="field__error" role="alert">{error}</p> : null}
     </main>
   );
 }
 
-function ChatAnswer({ step, value, onValue, roomType, finishTier, onRoom, onFinish, onNext }: { step: GuidedStep; value: string; onValue: (value: string) => void; roomType: RoomType | null; finishTier: FinishTier | null; onRoom: (value: RoomType) => void; onFinish: (value: FinishTier) => void; onNext: () => void }) {
+function ChatAnswer({ step, value, onValue, roomType, onRoom, onNext }: { step: GuidedStep; value: string; onValue: (value: string) => void; roomType: RoomType | null; onRoom: (value: RoomType) => void; onNext: () => void }) {
   if (step === "room") return <div className="chat-choice-grid">{rooms.map((room) => <button type="button" className={roomType === room.value ? "is-selected" : ""} key={room.value} onClick={() => onRoom(room.value)}>{room.label}</button>)}</div>;
-  if (step === "finish") return <div className="chat-choice-grid">{finishes.map((finish) => <button type="button" className={finishTier === finish.value ? "is-selected" : ""} key={finish.value} onClick={() => onFinish(finish.value)}>{finish.label}</button>)}</div>;
   const requestStep = step === "request";
-  return <div className="chat-composer">{requestStep ? <textarea rows={4} maxLength={800} value={value} onChange={(event) => onValue(event.target.value)} placeholder="Ex.: adicione um sofá claro sem mudar o restante do ambiente" /> : <input inputMode={step === "area" ? "decimal" : "text"} value={value} onChange={(event) => onValue(event.target.value)} placeholder={step === "area" ? "Ex.: 18" : "Ex.: São Paulo, SP"} />}<Button disabled={requestStep ? value.trim().length < 10 : value.trim().length < 1} onClick={onNext}>{requestStep ? "Criar 2 propostas" : "Continuar"}</Button></div>;
+  return <div className="chat-composer">{requestStep ? <textarea rows={4} maxLength={800} value={value} onChange={(event) => onValue(event.target.value)} placeholder="Ex.: adicione um sofá claro sem mudar o restante do ambiente" /> : <input value={value} onChange={(event) => onValue(event.target.value)} placeholder="Ex.: São Paulo, SP" />}<Button disabled={requestStep ? value.trim().length < 10 : value.trim().length < 1} onClick={onNext}>{requestStep ? "Criar 2 propostas" : "Continuar"}</Button></div>;
 }

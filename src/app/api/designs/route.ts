@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(sourceImageDataUri);
   if (!match) return failure(400, "Envie uma foto JPG, PNG ou WebP válida.");
   if (instruction.length < 10 || instruction.length > 800) return failure(400, "Descreva a mudança desejada em 10 a 800 caracteres.");
-  if (typeof body.areaM2 !== "number" || !Number.isFinite(body.areaM2) || body.areaM2 <= 0 || body.areaM2 > 1000) return failure(400, "Informe uma área válida.");
+  if (body.areaM2 != null && (typeof body.areaM2 !== "number" || !Number.isFinite(body.areaM2) || body.areaM2 <= 0 || body.areaM2 > 1000)) return failure(400, "Informe uma área válida.");
 
   const imageBytes = Buffer.from(match[2], "base64");
   if (!imageBytes.length || imageBytes.length > 3 * 1024 * 1024) return failure(400, "A foto processada excedeu o limite de envio.");
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   const context = [
     `Pedido do cliente: ${instruction}`,
     `Ambiente: ${String(body.roomType ?? "não informado")}`,
-    `Área aproximada: ${body.areaM2} m²`,
+    `Área aproximada: ${typeof body.areaM2 === "number" ? `${body.areaM2} m²` : "não informada"}`,
     `Local: ${String(body.city ?? "não informado")}/${String(body.uf ?? "")}`,
     `Acabamento: ${String(body.finishTier ?? "não informado")}`,
   ].join(". ");

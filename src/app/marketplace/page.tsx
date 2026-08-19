@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
+import { MarketplaceFeed } from "@/components/marketplace/MarketplaceFeed";
 
 export default function MarketplacePage() {
-  notFound();
+  return <MarketplaceFeed />;
 }

@@ -120,11 +120,13 @@ export function createHttpProjectFlowGateway(baseUrl = ""): ProjectFlowGateway {
       if (!SUPPORTED_IMAGE_TYPES[input.originalImage.type]) {
         throw new Error("Envie uma foto JPG, PNG ou WebP válida.");
       }
-      if (!input.location || !input.roomType || !input.finishTier || input.areaM2 === null) {
+      if (!input.location || !input.roomType) {
         throw new Error("Complete os dados do ambiente antes de gerar as propostas.");
       }
-      const areaError = validateArea(String(input.areaM2));
-      if (areaError) throw new Error(areaError);
+      if (input.areaM2 !== null) {
+        const areaError = validateArea(String(input.areaM2));
+        if (areaError) throw new Error(areaError);
+      }
       const briefingError = validateBriefing(input.instruction);
       if (briefingError) throw new Error(briefingError);
 
