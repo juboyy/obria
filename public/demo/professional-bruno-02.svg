@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Parede demonstrativa com pintura mineral</title>
+  <desc id="desc">Ilustração abstrata de parede com rolo e quadro.</desc>
+  <rect width="640" height="420" fill="#efe8dd"/>
+  <rect x="55" y="48" width="530" height="220" fill="#d8c7b3"/>
+  <path d="M55 175c110-46 214 34 318-9 93-38 139-15 212 15v87H55z" fill="#c96e4f"/>
+  <rect x="168" y="94" width="140" height="94" fill="#f6f0e8"/>
+  <path d="M183 110h110v62H183z" fill="#c4d1bd"/>
+  <path d="M125 283v55M245 283v55M425 283v55M525 283v55" stroke="#202622" stroke-width="8"/>
+  <rect x="74" y="272" width="505" height="14" fill="#202622"/>
+  <path d="M353 300l53-65M406 235l35 16" stroke="#b95232" stroke-width="13" stroke-linecap="round"/>
+  <rect x="323" y="304" width="59" height="36" rx="5" fill="#b95232"/>
+</svg>

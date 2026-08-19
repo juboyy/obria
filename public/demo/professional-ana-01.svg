@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Sala demonstrativa com parede terracota</title>
+  <desc id="desc">Ilustração abstrata de uma sala com luminária e poltrona.</desc>
+  <rect width="640" height="420" fill="#f2e8dc"/>
+  <rect y="290" width="640" height="130" fill="#d3b69d"/>
+  <rect x="70" y="70" width="210" height="150" rx="2" fill="#c96e4f"/>
+  <rect x="95" y="95" width="160" height="100" fill="#eed7c3"/>
+  <path d="M382 91h10v148h-10zM352 91h70v10h-70z" fill="#202622"/>
+  <path d="M390 101v44M365 101v44" stroke="#202622" stroke-width="5"/>
+  <path d="M334 145h112l-25 55h-62z" fill="#b95232"/>
+  <path d="M161 293h160v65H161z" fill="#58725a"/>
+  <path d="M172 358v26M310 358v26" stroke="#202622" stroke-width="8"/>
+  <circle cx="545" cy="111" r="33" fill="#c4d1bd"/>
+  <path d="M545 145v110M510 255h70" stroke="#58725a" stroke-width="8"/>
+</svg>
