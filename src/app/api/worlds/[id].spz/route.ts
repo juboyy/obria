@@ -1,0 +1,1 @@
+export async function GET() { return new Response(new Uint8Array([83, 80, 90, 0, 79, 66, 82, 73, 65]), { headers: { "content-type": "application/octet-stream", "cache-control": "public, max-age=3600" } }); }

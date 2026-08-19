@@ -1,0 +1,25 @@
+{
+  "name": "obria",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "lint": "node --check scripts/check-syntax.mjs",
+    "test": "node --test",
+    "test:e2e": "node scripts/e2e-smoke.mjs",
+    "build": "next build",
+    "start": "next start",
+    "demo:record": "node scripts/demo-record.mjs",
+    "demo:reset": "node scripts/demo-reset.mjs",
+    "demo:determinism": "node scripts/demo-determinism.mjs",
+    "mcp:smoke": "node scripts/mcp-smoke.mjs"
+  },
+  "dependencies": {
+    "next": "15.5.19",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zod": "3.25.76"
+  },
+  "packageManager": "pnpm@11.21.0"
+}

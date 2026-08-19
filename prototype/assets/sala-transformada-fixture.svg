@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Criação visual fixture da sala transformada</title>
+  <desc id="desc">A mesma sala com tapete natural, luminária verde e mesa lateral de madeira.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#eee9dd"/><stop offset="1" stop-color="#d9d0bd"/></linearGradient>
+    <pattern id="rug" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M0 15h30M15 0v30" stroke="#8c7658" stroke-width="2" opacity=".35"/></pattern>
+    <pattern id="grain" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="5" cy="7" r="1" fill="#253127" opacity=".07"/><circle cx="18" cy="19" r=".8" fill="#253127" opacity=".05"/></pattern>
+  </defs>
+  <rect width="900" height="1100" fill="url(#wall)"/>
+  <rect x="70" y="76" width="360" height="430" fill="#c6d3c6" stroke="#fbf7ed" stroke-width="22"/>
+  <path d="M250 76v430M70 286h360" stroke="#fbf7ed" stroke-width="16"/>
+  <path d="M0 760L900 620V1100H0z" fill="#9c8060"/>
+  <path d="M0 810L900 670M0 900L900 760M0 1000L900 860" stroke="#705943" stroke-width="5" opacity=".42"/>
+  <rect x="102" y="590" width="565" height="246" rx="28" fill="#6f756d"/>
+  <rect x="126" y="535" width="515" height="170" rx="28" fill="#7f857c"/>
+  <path d="M126 675h515M380 545v145" stroke="#565c55" stroke-width="5"/>
+  <rect x="150" y="557" width="180" height="98" rx="18" fill="#b96642" transform="rotate(-3 240 606)"/>
+  <rect x="446" y="558" width="155" height="94" rx="18" fill="#d0b890" transform="rotate(4 523 605)"/>
+  <ellipse cx="460" cy="895" rx="300" ry="145" fill="#d9c9a4"/>
+  <ellipse cx="460" cy="895" rx="300" ry="145" fill="url(#rug)"/>
+  <ellipse cx="470" cy="816" rx="155" ry="52" fill="#684b35"/>
+  <path d="M350 824l-22 128M590 824l28 128" stroke="#4b3528" stroke-width="15"/>
+  <path d="M760 390v410" stroke="#344c3c" stroke-width="16"/>
+  <path d="M698 394h124l-24-150h-76z" fill="#58725a" stroke="#344c3c" stroke-width="8"/>
+  <circle cx="760" cy="800" r="58" fill="#344c3c"/>
+  <ellipse cx="750" cy="880" rx="88" ry="34" fill="#70523a"/>
+  <path d="M695 882l-12 105M805 882l14 105" stroke="#543b2a" stroke-width="13"/>
+  <rect width="900" height="1100" fill="url(#grain)"/>
+</svg>
