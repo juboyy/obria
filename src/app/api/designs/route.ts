@@ -2,12 +2,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const OPENAI_IMAGES_URL = "https://api.openai.com/v1/images/edits";
-const CONCEPT_DIRECTIONS = [
-  "Luz de fim de tarde: paredes claras, madeira suave, luz natural quente e um ambiente arejado.",
-  "Texturas honestas: base neutra, cerâmica artesanal, materiais naturais e contraste tátil contido.",
-  "Verde silencioso: biofilia elegante, plantas bem integradas, luz quente e preservação do que já existe.",
-  "Contraste essencial: um gesto terroso marcante, composição sóbria e alto impacto sem reforma estrutural.",
-] as const;
+const EDIT_COUNT = 2;
 
 type DesignRequest = {
   sourceImageDataUri?: unknown;
@@ -21,13 +16,17 @@ type DesignRequest = {
 
 const MAX_RESPONSE_IMAGE_CHARACTERS = 4_000_000;
 
-function readImageBase64(payload: unknown) {
+function readImageBase64List(payload: unknown, expectedCount: number) {
   if (!payload || typeof payload !== "object" || !("data" in payload)) return null;
   const data = payload.data;
-  if (!Array.isArray(data) || !data[0] || typeof data[0] !== "object" || !("b64_json" in data[0])) return null;
-  const encoded = data[0].b64_json;
-  if (typeof encoded !== "string" || encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return null;
-  return encoded;
+  if (!Array.isArray(data) || data.length !== expectedCount) return null;
+  const encodedImages = data.map((image) => {
+    if (!image || typeof image !== "object" || !("b64_json" in image)) return null;
+    const encoded = image.b64_json;
+    if (typeof encoded !== "string" || encoded.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return null;
+    return encoded;
+  });
+  return encodedImages.every((encoded): encoded is string => encoded !== null) ? encodedImages : null;
 }
 
 function failure(status: number, message: string, retryable = false) {
@@ -72,39 +71,43 @@ export async function POST(request: Request) {
   ].join(". ");
 
   try {
-    const images = await Promise.all(CONCEPT_DIRECTIONS.map(async (direction, index) => {
-      const form = new FormData();
-      form.set("model", process.env.OPENAI_IMAGE_MODEL || "gpt-image-2");
-      form.set("image", new Blob([imageBytes], { type: mimeType }), `ambiente.${extension}`);
-      form.set("size", "1024x1024");
-      form.set("quality", process.env.OPENAI_IMAGE_QUALITY || "low");
-      form.set("output_format", "jpeg");
-      form.set("output_compression", process.env.OPENAI_IMAGE_COMPRESSION || "70");
-      form.set("prompt", [
-        "Edite a fotografia enviada e produza uma visualização fotorrealista de renovação residencial.",
-        "Preserve rigorosamente a arquitetura, dimensões, aberturas, perspectiva e enquadramento da foto original.",
-        "Não adicione texto, legenda, marca d'água, pessoas nem alterações estruturais.",
-        context,
-        `Conceito ${index + 1} de 4 — ${direction}`,
-        "O resultado deve ser claramente diferente dos outros conceitos pela paleta, materiais, iluminação e decoração.",
-      ].join(" "));
+    const model = process.env.OPENAI_IMAGE_MODEL || "gpt-image-2";
+    const form = new FormData();
+    form.set("model", model);
+    form.set("image", new Blob([imageBytes], { type: mimeType }), `ambiente.${extension}`);
+    form.set("n", String(EDIT_COUNT));
+    form.set("size", "auto");
+    form.set("quality", process.env.OPENAI_IMAGE_QUALITY || "low");
+    form.set("output_format", "jpeg");
+    form.set("output_compression", process.env.OPENAI_IMAGE_COMPRESSION || "70");
+    if (model !== "gpt-image-2") form.set("input_fidelity", "high");
+    form.set("prompt", [
+      "Edite a fotografia enviada usando a imagem original como fonte de verdade imutável.",
+      `Pedido explícito do cliente: ${instruction}`,
+      "Altere exclusivamente os elementos solicitados pelo cliente.",
+      "Todo elemento não mencionado deve permanecer visualmente idêntico ao original, incluindo arquitetura, geometria, perspectiva, enquadramento, aberturas, piso, paredes, teto, iluminação, móveis, objetos e vista externa.",
+      "Não remova, substitua, mova ou redesenhe nenhum elemento existente, exceto quando o pedido explícito exigir essa mudança.",
+      "Não adicione melhorias, objetos ou decoração por iniciativa própria.",
+      "As duas imagens podem variar somente na aparência do elemento explicitamente solicitado; todo o restante deve permanecer igual à fotografia original.",
+      "Não adicione texto, legenda, marca d'água nem pessoas.",
+      `Contexto descritivo, sem autorização para mudanças extras: ${context}`,
+    ].join(" "));
 
-      const response = await fetch(OPENAI_IMAGES_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-      });
-      const payload: unknown = await response.json();
-      const encoded = readImageBase64(payload);
-      if (!response.ok || !encoded) throw new Error(`OpenAI image request failed with status ${response.status}`);
-      return { imageDataUri: `data:image/jpeg;base64,${encoded}` };
-    }));
+    const response = await fetch(OPENAI_IMAGES_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    const payload: unknown = await response.json();
+    const encodedImages = readImageBase64List(payload, EDIT_COUNT);
+    if (!response.ok || !encodedImages) throw new Error(`OpenAI image request failed with status ${response.status}`);
+    const images = encodedImages.map((encoded) => ({ imageDataUri: `data:image/jpeg;base64,${encoded}` }));
     if (images.reduce((total, image) => total + image.imageDataUri.length, 0) > MAX_RESPONSE_IMAGE_CHARACTERS) {
       throw new Error("OpenAI image response exceeds the Vercel payload limit");
     }
 
     return Response.json({ projectId: crypto.randomUUID(), versions: images });
   } catch {
-    return failure(502, "Não foi possível gerar as quatro propostas agora. Tente novamente.", true);
+    return failure(502, "Não foi possível gerar as duas propostas agora. Tente novamente.", true);
   }
 }

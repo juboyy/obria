@@ -65,7 +65,7 @@ type DesignsResponse = {
   versions: Array<{ imageDataUri: string }>;
 };
 
-const VARIANT_LABELS = ["A", "B", "C", "D"] as const;
+const VARIANT_LABELS = ["A", "B"] as const;
 const SUPPORTED_IMAGE_TYPES: Record<string, true> = {
   "image/jpeg": true,
   "image/png": true,
@@ -94,8 +94,8 @@ function parseDesignsResponse(payload: unknown): DesignsResponse {
   if (!payload || typeof payload !== "object") throw new Error("O serviço de imagens retornou uma resposta inválida.");
   const projectId = "projectId" in payload ? payload.projectId : null;
   const versions = "versions" in payload ? payload.versions : null;
-  if (typeof projectId !== "string" || !projectId || !Array.isArray(versions) || versions.length !== 4) {
-    throw new Error("O serviço de imagens não retornou as quatro propostas esperadas.");
+  if (typeof projectId !== "string" || !projectId || !Array.isArray(versions) || versions.length !== 2) {
+    throw new Error("O serviço de imagens não retornou as duas propostas esperadas.");
   }
   const parsedVersions = versions.map((version) => {
     if (!version || typeof version !== "object" || !("imageDataUri" in version)) {
@@ -164,7 +164,7 @@ export function createHttpProjectFlowGateway(baseUrl = ""): ProjectFlowGateway {
             ordinal,
             label,
             titlePtBr: `Conceito ${label}`,
-            descriptionPtBr: `Proposta visual ${ordinal} de 4 gerada para o ambiente enviado.`,
+            descriptionPtBr: `Variação ${ordinal} de 2 aplicada somente ao pedido informado.`,
             image: {
               id: `${result.projectId}-image-${ordinal}`,
               url: imageDataUri,

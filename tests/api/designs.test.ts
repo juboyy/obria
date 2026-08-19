@@ -73,11 +73,39 @@ describe("POST /api/designs", () => {
     expect(response.status).toBe(502);
   });
 
+  it("returns exactly two edits and limits changes to the client's request", async () => {
+    process.env.OBRIA_PROVIDER_MODE = "live";
+    process.env.OPENAI_API_KEY = "test-key";
+    const submittedForms: FormData[] = [];
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+      submittedForms.push(init?.body as FormData);
+      return Response.json({
+        data: [
+          { b64_json: "/9j/2Q==" },
+          { b64_json: "/9j/2Q==" },
+        ],
+      });
+    });
+
+    const response = await POST(validRequest());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      versions: [{ imageDataUri: "data:image/jpeg;base64,/9j/2Q==" }, { imageDataUri: "data:image/jpeg;base64,/9j/2Q==" }],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(submittedForms[0]?.get("n")).toBe("2");
+    const prompt = String(submittedForms[0]?.get("prompt"));
+    expect(prompt).toContain("Altere exclusivamente os elementos solicitados pelo cliente");
+    expect(prompt).toContain("Todo elemento não mencionado deve permanecer");
+    expect(prompt).toContain("Não adicione melhorias, objetos ou decoração por iniciativa própria");
+  });
+
   it("fails visibly before exceeding the Vercel response limit", async () => {
     process.env.OBRIA_PROVIDER_MODE = "live";
     process.env.OPENAI_API_KEY = "test-key";
-    const oversizedBase64 = "A".repeat(1_000_004);
-    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ data: [{ b64_json: oversizedBase64 }] }));
+    const oversizedBase64 = "A".repeat(2_000_004);
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json({ data: [{ b64_json: oversizedBase64 }, { b64_json: oversizedBase64 }] }));
 
     const response = await POST(validRequest());
 
