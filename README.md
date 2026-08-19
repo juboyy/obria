@@ -4,20 +4,17 @@
 
 Obra Clara é uma experiência guiada para quem está planejando reformar um ambiente. A pessoa visualiza alternativas, escolhe um caminho, confirma o escopo, compara duas formas de estimar o trabalho e prepara um pedido estruturado para avaliação profissional.
 
-> **Atenção sobre o estado atual:** este README descreve o produto e os limites definidos no repositório. A árvore remota consultada ainda é documental. Leia o [QUALITY_GATES.md](./QUALITY_GATES.md) antes de tratar qualquer etapa como concluída.
+> **Limites da demonstração:** este repositório contém uma aplicação local para apresentar a jornada P0. O marketplace, os perfis, as propostas e os valores são fictícios e locais; nenhuma integração externa ou contratação real é pressuposta.
 
 ## Estado atual
 
-No snapshot remoto consultado em **19/08/2026**, `main` continha `PRD.md`, `PLANO_EXECUCAO_EQUIPE.md`, `QUALITY_GATES.md` e este README. As branches `artur`, `fabio` e `joao` também existiam, mas apontavam para uma árvore sem código de aplicação.
+O snapshot atual contém uma aplicação Next.js executável em `src/`, seu manifesto `package.json`, `pnpm-lock.yaml`, tipos compartilhados, cálculo determinístico de estimativas, dados demonstrativos do marketplace e testes Vitest. A jornada visual de Artur permanece como a interface principal: intake, quatro opções, refinamento, escopo, estimativas e handoff para a prévia de publicação.
 
-Nenhuma árvore consultada apresentava `src/`, `package.json`, lockfile, `.env.example`, migrações do Supabase, configuração da Vercel, build log ou URL pública do produto. Portanto:
+O fluxo de publicação usa `localStorage` no navegador para transportar um `MarketplaceProjectPost` validado por Zod entre a jornada e `/projeto/[id]/publicar`. O feed em `/marketplace` e a fixture `demo-project-sala-natural` são demonstrativos e não representam busca, matching, contato ou disponibilidade reais.
 
-- não há runtime da aplicação comprovado neste snapshot;
-- não há integração Supabase, OpenAI ou Vercel comprovada;
-- o fluxo abaixo é o produto especificado, não uma promessa de que já está funcionando;
-- não há comandos locais publicados porque não existe um manifesto de pacote ou configuração executável para sustentá-los.
+Não há evidência neste repositório de chamadas funcionais para OpenAI, persistência Supabase, deploy Vercel ou integração com fornecedores externos. Esses serviços permanecem fora do escopo comprovado desta versão.
 
-A documentação de referência é o [PRD](./PRD.md), o plano de execução é o [PLANO_EXECUCAO_EQUIPE.md](./PLANO_EXECUCAO_EQUIPE.md) e os critérios obrigatórios de evidência estão no [QUALITY_GATES.md](./QUALITY_GATES.md).
+As regras de produto continuam no [PRD](./PRD.md), o plano de integração está em [PLANO_EXECUCAO_EQUIPE.md](./PLANO_EXECUCAO_EQUIPE.md) e os critérios de evidência estão em [QUALITY_GATES.md](./QUALITY_GATES.md).
 
 ## A jornada do produto
 
@@ -85,63 +82,48 @@ Cortes de tempo, dados semeados e perfis fictícios devem ser identificados dura
 
 ## Implementado, demonstrativo e planejado
 
-A documentação e a aplicação não são a mesma coisa. Esta é a fronteira que o README mantém explícita:
-
 | Faixa | O que significa aqui |
 | --- | --- |
-| **Implementado e comprovado** | Neste snapshot, apenas a documentação do produto, o plano da equipe, os gates de qualidade e as referências Git remotas estão presentes. Não há código de aplicação ou execução comprovada. |
-| **Demonstrativo por definição** | O marketplace do hackathon é uma interface de demonstração. Seus cards, perfis e propostas são fictícios e não oferecem matching real, contato, contratação, pagamentos, avaliações ou notificações. |
-| **Planejado, ainda não comprovado** | A jornada completa da foto ao pedido, geração com OpenAI, persistência no Supabase, cálculo das duas estimativas, testes, deploy na Vercel e qualquer URL pública. Esses itens aparecem no PRD como objetivo técnico, não como evidência de entrega. |
+| **Implementado no código** | Jornada client-side em `src/app/page.tsx`, prévia em `src/components/marketplace/PublishPreview.tsx`, feed em `src/components/marketplace/MarketplaceFeed.tsx`, tipos em `src/types/`, schemas Zod em `src/lib/api/schemas.ts`, cálculo em `src/lib/estimate/` e ranking determinístico em `src/lib/matching/`. |
+| **Demonstrativo por definição** | O feed, os perfis, as propostas, as imagens e a fixture `demo-project-sala-natural` são dados locais. Publicar altera apenas `localStorage`; não envia mensagens, cria contato, faz matching ao vivo, recebe propostas, cobra, avalia ou notifica. |
+| **Fora do comprovado** | Não há evidência de chamadas funcionais para OpenAI, persistência Supabase, fornecedores externos, deploy Vercel ou URL pública. Esses itens não são necessários para executar a demonstração local. |
 
-Não há profissionais reais conectados ao produto. Publicar um pedido no protótipo não envia uma solicitação para ninguém.
+## Arquitetura e estrutura atual
 
-## Arquitetura prevista
+| Camada | Implementação no repositório |
+| --- | --- |
+| Aplicação | Next.js 16 App Router + TypeScript, com React 19. |
+| Interface | CSS Modules e estilos globais; a jornada principal preserva a linguagem visual de Artur. |
+| Contratos | Tipos em `src/types/**` e `marketplaceProjectPostSchema` em `src/lib/api/schemas.ts`. |
+| Handoff | `src/lib/marketplace/handoff.ts` valida o JSON recuperado do navegador e restringe o `projectId`; a chave é `obria-demo-marketplace-post`. |
+| Estimativas | Regras determinísticas em `src/lib/estimate/calculate.ts`, com dados de custo em `src/data/costs/` e alternativas em `src/data/eco/`. |
+| Marketplace | Dados fictícios em `src/data/marketplace/`; feed e prévia em `src/components/marketplace/`. |
+| Integrações externas | Dependências de cliente Supabase existem no manifesto, mas não há fluxo externo comprovado nesta jornada. |
 
-A arquitetura abaixo vem do PRD e ainda não deve ser lida como configuração existente:
+## Comandos locais
 
-| Camada | Escolha prevista | Situação comprovada no remoto |
-| --- | --- | --- |
-| Aplicação | Next.js App Router + TypeScript | Não comprovada. Não há `src/` nem `package.json`. |
-| Interface | Tailwind e um conjunto pequeno de primitivas no estilo Radix/shadcn | Não comprovada. |
-| Validação | Zod | Não comprovada. |
-| Imagens | OpenAI Images Edit API | Integração prevista, não configurada ou testada no repositório consultado. |
-| Escopo estruturado | OpenAI Responses API Structured Outputs | Integração prevista, não configurada ou testada no repositório consultado. |
-| Dados | Supabase Postgres | **Alvo de dados previsto no PRD.** Não há migrações, URL de projeto ou configuração publicada. |
-| Mídia | Supabase Storage privado, com URLs assinadas | **Alvo de mídia previsto no PRD.** Não há bucket ou fluxo de upload comprovado. |
-| Hospedagem | Funções Node.js na Vercel | **Alvo de deploy previsto no PRD.** Não há configuração nem URL pública de aplicação comprovada. |
-| Testes | Vitest, Testing Library e um smoke test Playwright se houver tempo | Não há testes ou configuração de testes no remoto consultado. |
+Requisitos: Node.js `>=20.9.0`, Corepack e pnpm `11.21.0`.
 
-O fluxo técnico planejado é: navegador cria uma sessão anônima, envia a foto por caminho assinado, o servidor chama os provedores de IA, guarda mídia privada e linhagem no Supabase, calcula as duas estimativas com regras determinísticas e persiste o pedido demonstrativo.
-
-## Variáveis de ambiente previstas
-
-O PRD define os nomes abaixo para a implementação planejada. Os valores não pertencem ao README. Como não existe `.env.example` ou configuração de aplicação no snapshot consultado, esta lista não significa que as variáveis já estejam sendo lidas.
-
-```text
-OPENAI_API_KEY
-OPENAI_IMAGE_MODEL
-OPENAI_SCOPE_MODEL
-OPENAI_IMAGE_QUALITY
-OPENAI_IMAGE_FORMAT
-OPENAI_IMAGE_COMPRESSION
-
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
-
-SESSION_SIGNING_SECRET
-MAX_GENERATIONS_PER_PROJECT
-GENERATION_ENABLED
-MARKETPLACE_MODE
+```bash
+corepack pnpm install
+corepack pnpm dev
 ```
 
-Chaves da OpenAI, chave de serviço do Supabase e segredo de assinatura devem permanecer no servidor. Nenhum valor secreto deve ser colocado neste arquivo ou no bundle do navegador.
+| Comando | Descrição |
+| --- | --- |
+| `corepack pnpm dev` | Inicia o servidor Next.js local. |
+| `corepack pnpm build` | Gera o build de produção. |
+| `corepack pnpm start` | Serve o build de produção. |
+| `corepack pnpm lint` | Executa o ESLint. |
+| `corepack pnpm typecheck` | Executa o TypeScript sem emitir arquivos. |
+| `corepack pnpm test` | Executa os testes Vitest uma vez. |
+| `corepack pnpm test:watch` | Mantém o Vitest em modo de observação. |
 
-## Setup local
+Os testes versionados ficam em `tests/estimate/`, `tests/marketplace/` e `tests/matching/`. Eles cobrem cálculo, invariantes dos dados demonstrativos e ranking; não comprovam integrações externas nem deploy.
 
-Não há setup local executável sustentado pelo repositório neste momento. A árvore remota não contém manifesto de dependências, lockfile, código de aplicação, `.env.example`, migrações ou scripts. Por isso, este README não inventa comandos como `npm install`, `npm run dev`, `npm test` ou `npm run build`.
+## Configuração externa
 
-Quando houver uma versão executável, os comandos publicados aqui deverão corresponder aos scripts reais do manifesto e passar pelos gates de qualidade. Até lá, o repositório público é a fonte da documentação, não uma aplicação local comprovadamente inicializável.
+Não há variáveis de ambiente necessárias para a demonstração local descrita acima. Não inclua chaves de OpenAI, Supabase ou outros serviços neste arquivo nem no bundle. A presença de dependências de cliente no `package.json` não significa que exista uma conta, persistência remota, chamada de API ou deploy configurado.
 
 ## Privacidade e segurança
 
@@ -170,18 +152,10 @@ A estimativa planejada usa faixas, premissas, referências de custo e diferença
 
 ## Repositório e ownership
 
-- Repositório público: [github.com/juboyy/obria](https://github.com/juboyy/obria)
-- Branch de integração: `main`, sujeita ao [QUALITY_GATES.md](./QUALITY_GATES.md) antes de release ou deploy.
-- Branches de trabalho observadas: `artur`, `fabio` e `joao`.
-
-O plano de execução associa as frentes de trabalho assim. Isso descreve ownership operacional; não é uma declaração de permissões ou proteção configurada no GitHub.
-
-| Branch | Frente no plano | Responsabilidade resumida |
-| --- | --- | --- |
-| `joao` | Plataforma, IA e busca | Contratos técnicos, APIs, mídia, Supabase, geração, perguntas, estimativas e ranking. |
-| `artur` | Produto, experiência e integração | Happy path, UX/UI, integração, README, demo, submissão e deploy planejado. |
-| `fabio` | Marketplace demonstrativo e qualidade | Interface do marketplace, dados fictícios, revisão de estados e suporte à demo. |
-| `main` | Integração e release | Receber mudanças avaliadas e evidências conforme os gates. |
+- Repositório público: [github.com/juboyy/obria](https://github.com/juboyy/obria).
+- A aplicação deve ser avaliada pelos arquivos e comandos versionados, seguindo os gates em [QUALITY_GATES.md](./QUALITY_GATES.md).
+- A experiência local não exibe endereço exato, mantém consentimento separado da publicação e identifica conteúdo fictício do marketplace.
+- O plano de execução e o histórico das frentes estão em [PLANO_EXECUCAO_EQUIPE.md](./PLANO_EXECUCAO_EQUIPE.md); nomes de branches não são promessa de proteção ou deploy.
 
 ## Referências do projeto
 
