@@ -3,11 +3,11 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'ObrIA — uma prancheta de obra no bolso',
+    default: 'ObrIA — do desejo ao próximo passo',
     template: '%s · ObrIA',
   },
   description:
-    'Um único input coordena ideação do ambiente, procurement, sourcing e fornecedores.',
+    'Transforme uma ideia para o seu ambiente em caminhos visuais, escopo confirmável e uma conversa mais clara com profissionais.',
 };
 
 export default function RootLayout({
