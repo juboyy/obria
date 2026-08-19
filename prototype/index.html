@@ -84,6 +84,7 @@
           <span class="image-label" id="conceptLabel">criação visual fixture</span>
         </div>
         <button class="compare-button" id="compareButton" type="button">Segurar para ver original</button>
+        <p class="request-applied" id="requestApplied"></p>
 
         <p class="quote-context"><span class="live-dot" aria-hidden="true"></span><span id="quoteRound"></span></p>
         <ol class="offer-list" id="offerList"></ol>
@@ -104,7 +105,24 @@
           <div><dt>Hash</dt><dd id="proposalHash"></dd></div>
         </dl>
         <p class="disclaimer">Proposta demonstrativa. Não executa pagamento, reserva, contratação ou logística.</p>
-        <button class="text-button" id="restartButton" type="button">Reiniciar demonstração</button>
+        <div class="inline-actions"><button class="primary-button compact" id="publishMarketplaceButton" type="button">Publicar no marketplace demo</button><button class="text-button" id="restartButton" type="button">Reiniciar demonstração</button></div>
+      </section>
+
+      <section class="marketplace" id="marketplace" aria-labelledby="marketplace-title" hidden>
+        <p class="eyebrow">07 · marketplace demonstrativo</p>
+        <h2 id="marketplace-title">Seu pedido encontrou três profissionais.</h2>
+        <p class="lede">Perfis, compatibilidade e propostas abaixo são dados fictícios para demonstrar o fluxo. Nenhum contato real foi realizado.</p>
+        <article class="marketplace-brief">
+          <img id="marketplaceImage" src="assets/sala-transformada-fixture.svg" alt="Imagem do pedido publicado">
+          <div><span class="demo-profile-badge">PEDIDO DEMONSTRATIVO</span><h3>Sala mais aconchegante</h3><p id="marketplaceBrief"></p><small>São Paulo · 3 produtos cotados · sem endereço exato</small></div>
+        </article>
+        <div class="professional-list" aria-label="Profissionais demonstrativos compatíveis">
+          <article class="professional-card"><div><span class="demo-profile-badge">PERFIL DEMONSTRATIVO</span><h3>Ana Martins Studio</h3><p>Pintura residencial · iluminação · curadoria de materiais</p></div><strong>94% compatível</strong><dl><div><dt>Proposta</dt><dd>R$ 3.900</dd></div><div><dt>Prazo</dt><dd>12 dias</dd></div></dl><button class="select-professional" type="button" data-name="Ana Martins Studio" data-price="R$ 3.900">Escolher proposta</button></article>
+          <article class="professional-card"><div><span class="demo-profile-badge">PERFIL DEMONSTRATIVO</span><h3>Bruno Lima Reformas</h3><p>Pintura · instalação leve · montagem</p></div><strong>88% compatível</strong><dl><div><dt>Proposta</dt><dd>R$ 3.450</dd></div><div><dt>Prazo</dt><dd>10 dias</dd></div></dl><button class="select-professional" type="button" data-name="Bruno Lima Reformas" data-price="R$ 3.450">Escolher proposta</button></article>
+          <article class="professional-card"><div><span class="demo-profile-badge">PERFIL DEMONSTRATIVO</span><h3>Camila Rocha Interiores</h3><p>Interiores · reaproveitamento · iluminação</p></div><strong>84% compatível</strong><dl><div><dt>Proposta</dt><dd>R$ 4.200</dd></div><div><dt>Prazo</dt><dd>15 dias</dd></div></dl><button class="select-professional" type="button" data-name="Camila Rocha Interiores" data-price="R$ 4.200">Escolher proposta</button></article>
+        </div>
+        <div class="marketplace-selection" id="marketplaceSelection" role="status" hidden><strong id="selectedProfessional"></strong><p>Proposta demonstrativa selecionada. Nenhuma contratação ou mensagem real foi enviada.</p></div>
+        <button class="text-button" id="marketplaceRestartButton" type="button">Reiniciar demonstração</button>
       </section>
 
       <section class="error-panel" id="errorPanel" role="alert" hidden><strong>O fluxo foi interrompido.</strong><p id="errorMessage"></p><button class="text-button" id="retryButton" type="button">Voltar à intenção</button></section>

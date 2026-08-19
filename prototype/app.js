@@ -236,6 +236,7 @@ function renderConcept() {
     : 'Sala transformada fixture com tapete natural, luminária verde e mesa lateral';
   $('#conceptSource').textContent = hasLocalComposite ? 'composição local · sem API' : 'GPT Image replay fixture';
   $('#conceptLabel').textContent = hasLocalComposite ? 'montagem sobre sua imagem' : 'criação visual fixture';
+  $('#requestApplied').textContent = `Pedido aplicado: ${$('#intentGoal').textContent}. Produtos representados e cotados: ${quotes.map(quote => quote.name).join(', ')}.`;
   $('#quoteRound').textContent = `rodada ${quotes[0].quoteId.slice(3)} · ${quotes[0].quotedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · fornecedores simulados`;
   $('#offerList').innerHTML = quotes.map((quote, index) => `
     <li class="offer" id="offer-${index}">
@@ -295,14 +296,29 @@ $('#approveButton').addEventListener('click', async () => {
   go($('#proposal'));
 });
 
+$('#publishMarketplaceButton').addEventListener('click', () => {
+  $('#marketplaceImage').src = generatedCompositeSrc || conceptSrc;
+  $('#marketplaceImage').alt = generatedCompositeSrc ? 'Montagem local publicada no marketplace demonstrativo' : 'Conceito fixture publicado no marketplace demonstrativo';
+  $('#marketplaceBrief').textContent = $('#intentGoal').textContent;
+  show($('#marketplaceSelection'), false);
+  show($('#marketplace'));
+  go($('#marketplace'));
+});
+
+$$('.select-professional').forEach(button => button.addEventListener('click', () => {
+  $('#selectedProfessional').textContent = `${button.dataset.name} · ${button.dataset.price}`;
+  show($('#marketplaceSelection'));
+  $('#marketplaceSelection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}));
+
 function fail(message) {
   $('#errorMessage').textContent = message;
   show($('#approvalBar'), false);
   go($('#errorPanel'));
 }
 $('#retryButton').addEventListener('click', () => { show($('#errorPanel'), false); go($('#capture')); });
-$('#restartButton').addEventListener('click', () => {
-  ['intentConfirm', 'progress', 'concept', 'proposal', 'errorPanel', 'approvalBar'].forEach(name => show($(`#${name}`), false));
+function restartDemo() {
+  ['intentConfirm', 'progress', 'concept', 'proposal', 'marketplace', 'marketplaceSelection', 'errorPanel', 'approvalBar'].forEach(name => show($(`#${name}`), false));
   compositeJobId += 1;
   if (selectedImageSrc.startsWith('blob:')) URL.revokeObjectURL(selectedImageSrc);
   if (generatedCompositeSrc) URL.revokeObjectURL(generatedCompositeSrc);
@@ -316,7 +332,9 @@ $('#restartButton').addEventListener('click', () => {
   $('#photoButton').textContent = 'Usar câmera';
   setMode('text');
   go($('#capture'));
-});
+}
+$('#restartButton').addEventListener('click', restartDemo);
+$('#marketplaceRestartButton').addEventListener('click', restartDemo);
 
 window.addEventListener('beforeunload', () => {
   compositeJobId += 1;
