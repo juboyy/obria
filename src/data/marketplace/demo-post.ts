@@ -1,10 +1,6 @@
 import type { ConfirmedScopeItem, MarketplaceProjectPost } from '@/types';
 
-export const DEMO_SCOPE_LABELS = [
-  'Preparar e pintar paredes da sala',
-  'Atualizar iluminação de apoio',
-  'Avaliar piso existente e alternativas equivalentes',
-];
+export const DEMO_MARKETPLACE_PROJECT_ID = 'demo-project-sala-natural';
 
 export const DEMO_SUSTAINABILITY_PREFERENCES = [
   'Aceita alternativas equivalentes quando fizerem sentido',
@@ -15,7 +11,10 @@ export const DEMO_SUSTAINABILITY_PREFERENCES = [
  * The fixture is intentionally local. The selected concept is represented by
  * a variant id because original user media must not be published by default.
  */
-export function createDemoMarketplacePost(projectId: string): MarketplaceProjectPost {
+export function createDemoMarketplacePost(projectId: typeof DEMO_MARKETPLACE_PROJECT_ID): MarketplaceProjectPost;
+export function createDemoMarketplacePost(projectId: string): MarketplaceProjectPost | null {
+  if (projectId !== DEMO_MARKETPLACE_PROJECT_ID) return null;
+
   const confirmedScope: ConfirmedScopeItem[] = [
     {
       id: 'demo-scope-1',

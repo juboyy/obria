@@ -1,9 +1,11 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { ProfessionalMatch } from '@/types';
 import { DEMO_PROFESSIONALS } from '@/data/marketplace/professionals';
 import { DEMO_PROPOSALS } from '@/data/marketplace/proposals';
+import { DEMO_MARKETPLACE_PROJECT_ID } from '@/data/marketplace/demo-post';
 import styles from './MarketplaceFeed.module.css';
 
 const PROPOSAL_IMAGES: Record<string, string> = {
@@ -55,10 +57,10 @@ export function MarketplaceFeed() {
   return (
     <main className={styles.shell}>
       <div className={styles.topline}>
-        <a className={styles.brand} href="/" aria-label="Obra Clara, início">
+        <Link className={styles.brand} href="/" aria-label="Obra Clara, início">
           <span className={styles.brandMark} aria-hidden="true">OC</span>
           <span>Obra Clara</span>
-        </a>
+        </Link>
         <span className={styles.prototypeLabel}>Marketplace protótipo</span>
       </div>
 
@@ -86,7 +88,7 @@ export function MarketplaceFeed() {
           <span>Escopo confirmado</span>
           <strong>3 frentes de trabalho</strong>
         </div>
-        <a className={styles.secondaryAction} href="/projeto/demo-project-sala-natural/publicar">Revisar pedido</a>
+        <a className={styles.secondaryAction} href={`/projeto/${DEMO_MARKETPLACE_PROJECT_ID}/publicar`}>Revisar pedido</a>
       </section>
 
       <section className={styles.section} aria-labelledby="professionals-title">

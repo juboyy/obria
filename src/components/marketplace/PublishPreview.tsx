@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { MarketplaceProjectPost } from '@/types';
-import { createDemoMarketplacePost, DEMO_SCOPE_LABELS } from '@/data/marketplace/demo-post';
+import { createDemoMarketplacePost, DEMO_MARKETPLACE_PROJECT_ID } from '@/data/marketplace/demo-post';
+import { MARKETPLACE_POST_STORAGE_KEY, parseMarketplacePost } from '@/lib/marketplace/handoff';
 import styles from './PublishPreview.module.css';
 
 const COVER_IMAGE = '/demo/proposal-ana.svg';
@@ -25,21 +27,69 @@ function moneyRange(range: MarketplaceProjectPost['economicRange']) {
 }
 
 export function PublishPreview({ projectId }: PublishPreviewProps) {
-  const [post, setPost] = useState(() => createDemoMarketplacePost(projectId));
+  const [post, setPost] = useState<MarketplaceProjectPost | null>(null);
+  const [ready, setReady] = useState(false);
   const [consent, setConsent] = useState(false);
   const [published, setPublished] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      const raw = window.localStorage.getItem(MARKETPLACE_POST_STORAGE_KEY);
+      const storedPost = parseMarketplacePost(raw, projectId);
+      const fixturePost = raw === null && projectId === DEMO_MARKETPLACE_PROJECT_ID
+        ? createDemoMarketplacePost(projectId)
+        : null;
+
+      if (cancelled) return;
+      setPost(storedPost ?? fixturePost);
+      setPublished(storedPost?.status === 'marketplace_demo_published');
+      setReady(true);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!ready || !post) return;
+    window.localStorage.setItem(MARKETPLACE_POST_STORAGE_KEY, JSON.stringify(post));
+  }, [post, ready]);
+
   function publishPost() {
-    if (!consent) return;
-    setPost((current) => ({ ...current, status: 'marketplace_demo_published' }));
+    if (!consent || !post) return;
+    setPost((current) => current ? { ...current, status: 'marketplace_demo_published' } : current);
     setPublished(true);
+  }
+
+  if (!ready) return null;
+
+  if (!post) {
+    return (
+      <main className={styles.shell}>
+        <div className={styles.topline}>
+          <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
+          <span className={styles.prototypeLabel}>Marketplace protótipo</span>
+        </div>
+        <section className={styles.success} aria-labelledby="recovery-title">
+          <p className={styles.eyebrow}>Pedido não encontrado</p>
+          <h1 id="recovery-title">Esse resumo precisa ser retomado na jornada principal.</h1>
+          <p className={styles.successLead}>Não encontramos um pedido válido para este endereço neste navegador. Volte ao início para montar o escopo novamente.</p>
+          <div className={styles.successActions}>
+            <Link className={styles.primaryAction} href="/">Voltar ao início</Link>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   if (published) {
     return (
       <main className={styles.shell}>
         <div className={styles.topline}>
-          <a className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></a>
+          <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
           <span className={styles.prototypeLabel}>Marketplace protótipo</span>
         </div>
         <section className={styles.success} aria-labelledby="success-title">
@@ -69,7 +119,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
   return (
     <main className={styles.shell}>
       <div className={styles.topline}>
-        <a className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></a>
+        <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
         <span className={styles.prototypeLabel}>Marketplace protótipo</span>
       </div>
 
@@ -117,7 +167,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
             <div className={styles.postSection}>
               <h4>Escopo confirmado</h4>
               <ul className={styles.scopeList}>
-                {DEMO_SCOPE_LABELS.map((scope) => <li key={scope}>{scope}</li>)}
+                {post.confirmedScope.map((scope) => <li key={scope.id}>{scope.labelPtBr}</li>)}
               </ul>
             </div>
             <div className={styles.postSection}>
@@ -140,28 +190,28 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
             <p className={styles.eyebrow}>Configurações do pedido</p>
             <h2 id="settings-title">Escolha o enquadramento</h2>
             <label className={styles.fieldLabel} htmlFor="post-title">Título do pedido</label>
-            <input id="post-title" value={post.title} maxLength={100} onChange={(event) => setPost((current) => ({ ...current, title: event.target.value }))} />
+            <input id="post-title" value={post.title} maxLength={100} onChange={(event) => setPost((current) => current ? { ...current, title: event.target.value } : current)} />
 
             <fieldset className={styles.fieldset}>
               <legend>Estimativa de preferência</legend>
               {(['economic', 'ecological', 'both'] as const).map((preference) => (
                 <label className={styles.radioRow} key={preference}>
-                  <input type="radio" name="estimatePreference" checked={post.estimatePreference === preference} onChange={() => setPost((current) => ({ ...current, estimatePreference: preference }))} />
+                  <input type="radio" name="estimatePreference" checked={post.estimatePreference === preference} onChange={() => setPost((current) => current ? { ...current, estimatePreference: preference } : current)} />
                   <span>{preference === 'economic' ? 'Mais econômica' : preference === 'ecological' ? 'Mais ecológica' : 'Quero receber as duas'}</span>
                 </label>
               ))}
             </fieldset>
 
             <label className={styles.fieldLabel} htmlFor="desired-start">Quando você espera começar?</label>
-            <select id="desired-start" value={post.desiredStart} onChange={(event) => setPost((current) => ({ ...current, desiredStart: event.target.value as MarketplaceProjectPost['desiredStart'] }))}>
+            <select id="desired-start" value={post.desiredStart} onChange={(event) => setPost((current) => current ? { ...current, desiredStart: event.target.value as MarketplaceProjectPost['desiredStart'] } : current)}>
               {Object.entries(START_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
-            <label className={styles.checkRow}><input type="checkbox" checked={post.datesFlexible} onChange={(event) => setPost((current) => ({ ...current, datesFlexible: event.target.checked }))} /><span>Tenho flexibilidade de datas</span></label>
-            <label className={styles.checkRow}><input type="checkbox" checked={post.allowEquivalentAlternatives} onChange={(event) => setPost((current) => ({ ...current, allowEquivalentAlternatives: event.target.checked }))} /><span>Aceito avaliar alternativas equivalentes</span></label>
-            <label className={styles.checkRow}><input type="checkbox" checked={post.includeOriginalImage} onChange={(event) => setPost((current) => ({ ...current, includeOriginalImage: event.target.checked }))} /><span>Exibir também a imagem original demonstrativa</span></label>
+            <label className={styles.checkRow}><input type="checkbox" checked={post.datesFlexible} onChange={(event) => setPost((current) => current ? { ...current, datesFlexible: event.target.checked } : current)} /><span>Tenho flexibilidade de datas</span></label>
+            <label className={styles.checkRow}><input type="checkbox" checked={post.allowEquivalentAlternatives} onChange={(event) => setPost((current) => current ? { ...current, allowEquivalentAlternatives: event.target.checked } : current)} /><span>Aceito avaliar alternativas equivalentes</span></label>
+            <label className={styles.checkRow}><input type="checkbox" checked={post.includeOriginalImage} onChange={(event) => setPost((current) => current ? { ...current, includeOriginalImage: event.target.checked } : current)} /><span>Exibir também a imagem original demonstrativa</span></label>
 
             <label className={styles.fieldLabel} htmlFor="post-note">Observação opcional</label>
-            <textarea id="post-note" maxLength={300} rows={4} value={post.note ?? ''} onChange={(event) => setPost((current) => ({ ...current, note: event.target.value }))} />
+            <textarea id="post-note" maxLength={300} rows={4} value={post.note ?? ''} onChange={(event) => setPost((current) => current ? { ...current, note: event.target.value } : current)} />
             <p className={styles.characterCount}>{(post.note ?? '').length}/300</p>
 
             <label className={styles.consentRow}>

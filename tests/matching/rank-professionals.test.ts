@@ -4,11 +4,11 @@ import { rankProfessionals } from "@/lib/matching/rank-professionals";
 import type { DemoProfessional } from "@/types";
 
 const professional = (
-  values: Partial<DemoProfessional> & Pick<DemoProfessional, "id">,
+  { id, ...values }: Partial<DemoProfessional> & Pick<DemoProfessional, "id">,
 ): DemoProfessional => ({
-  id: values.id,
+  id,
   isDemo: true,
-  name: `Profissional ${values.id}`,
+  name: `Profissional ${id}`,
   city: "São Paulo",
   uf: "SP",
   specialties: ["Pintura", "Pisos"],
