@@ -3,11 +3,18 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import type { MarketplaceProjectPost } from '@/types';
+import { marketplaceProjectPostSchema } from '@/lib/api/schemas';
 import { createDemoMarketplacePost, DEMO_MARKETPLACE_PROJECT_ID } from '@/data/marketplace/demo-post';
 import { MARKETPLACE_POST_STORAGE_KEY, parseMarketplacePost } from '@/lib/marketplace/handoff';
 import styles from './PublishPreview.module.css';
 
-const COVER_IMAGE = '/demo/proposal-ana.svg';
+const COVER_IMAGES: Record<string, string> = {
+  'concept-a': '/demo/proposal-ana.svg',
+  'concept-b': '/demo/proposal-bruno.svg',
+  'concept-c': '/demo/proposal-camila.svg',
+  'concept-d': '/demo/proposal-ana.svg',
+  'demo-variant-b': '/demo/proposal-bruno.svg',
+};
 const ORIGINAL_IMAGE = '/demo/professional-ana-01.svg';
 
 type PublishPreviewProps = {
@@ -19,6 +26,14 @@ const START_LABELS: Record<MarketplaceProjectPost['desiredStart'], string> = {
   within_30_days: 'Em até 30 dias',
   one_to_three_months: 'Em 1 a 3 meses',
   researching: 'Ainda pesquisando',
+};
+const ROOM_LABELS: Record<MarketplaceProjectPost['roomType'], string> = {
+  living_room: 'Sala de estar',
+  bedroom: 'Quarto',
+  kitchen: 'Cozinha',
+  bathroom: 'Banheiro',
+  office: 'Escritório',
+  other: 'Outro ambiente',
 };
 
 function moneyRange(range: MarketplaceProjectPost['economicRange']) {
@@ -55,12 +70,15 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
 
   useEffect(() => {
     if (!ready || !post) return;
-    window.localStorage.setItem(MARKETPLACE_POST_STORAGE_KEY, JSON.stringify(post));
+    const parsed = marketplaceProjectPostSchema.safeParse(post);
+    if (parsed.success) window.localStorage.setItem(MARKETPLACE_POST_STORAGE_KEY, JSON.stringify(parsed.data));
   }, [post, ready]);
 
   function publishPost() {
     if (!consent || !post) return;
-    setPost((current) => current ? { ...current, status: 'marketplace_demo_published' } : current);
+    const parsed = marketplaceProjectPostSchema.safeParse({ ...post, status: 'marketplace_demo_published' });
+    if (!parsed.success) return;
+    setPost(parsed.data);
     setPublished(true);
   }
 
@@ -116,6 +134,9 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
     );
   }
 
+  const titleValid = post.title.trim().length >= 3;
+  const coverImage = COVER_IMAGES[post.coverVariantId] ?? COVER_IMAGES['concept-a'];
+
   return (
     <main className={styles.shell}>
       <div className={styles.topline}>
@@ -147,7 +168,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
           </div>
           <div className={styles.imageGrid}>
             <figure>
-              <img src={COVER_IMAGE} alt="Ilustração demonstrativa do conceito selecionado para a sala" />
+              <img src={coverImage} alt={`Ilustração demonstrativa do conceito selecionado para ${ROOM_LABELS[post.roomType].toLowerCase()}`} />
               <figcaption>Conceito selecionado</figcaption>
             </figure>
             {post.includeOriginalImage && (
@@ -163,7 +184,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
               <span>{post.areaM2} m² aproximados</span>
             </div>
             <h3>{post.title}</h3>
-            <p className={styles.roomLabel}>Sala de estar · pedido demonstrativo</p>
+            <p className={styles.roomLabel}>{ROOM_LABELS[post.roomType]} · pedido demonstrativo</p>
             <div className={styles.postSection}>
               <h4>Escopo confirmado</h4>
               <ul className={styles.scopeList}>
@@ -190,7 +211,8 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
             <p className={styles.eyebrow}>Configurações do pedido</p>
             <h2 id="settings-title">Escolha o enquadramento</h2>
             <label className={styles.fieldLabel} htmlFor="post-title">Título do pedido</label>
-            <input id="post-title" value={post.title} maxLength={100} onChange={(event) => setPost((current) => current ? { ...current, title: event.target.value } : current)} />
+            <input id="post-title" value={post.title} minLength={3} maxLength={100} aria-invalid={!titleValid} onChange={(event) => setPost((current) => current ? { ...current, title: event.target.value } : current)} />
+            {!titleValid && <p className={styles.helperText}>Use pelo menos 3 caracteres no título.</p>}
 
             <fieldset className={styles.fieldset}>
               <legend>Estimativa de preferência</legend>
@@ -218,7 +240,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
               <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
               <span>Autorizo a exibição deste pedido e das imagens no protótipo do marketplace.</span>
             </label>
-            <button type="button" className={styles.publishAction} disabled={!consent} onClick={publishPost}>Publicar pedido</button>
+            <button type="button" className={styles.publishAction} disabled={!consent || !titleValid} onClick={publishPost}>Publicar pedido</button>
             {!consent && <p className={styles.helperText}>Marque a autorização para habilitar a publicação demonstrativa.</p>}
             <p className={styles.boundaryNote}>Esta ação altera apenas o estado local desta demonstração. Não envia mensagens nem cria contato real.</p>
           </div>
