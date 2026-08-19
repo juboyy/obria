@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Composição demonstrativa de reuso</title>
+  <desc id="desc">Ilustração abstrata de peças reaproveitadas em uma composição.</desc>
+  <rect width="640" height="420" fill="#f1eadf"/>
+  <path d="M66 317L183 79l119 238z" fill="#c96e4f"/>
+  <path d="M247 317L364 79l119 238z" fill="#58725a"/>
+  <path d="M428 317L545 79l52 238z" fill="#b7a188"/>
+  <circle cx="183" cy="79" r="19" fill="#202622"/>
+  <circle cx="364" cy="79" r="19" fill="#202622"/>
+  <circle cx="545" cy="79" r="19" fill="#202622"/>
+  <path d="M80 345h497" stroke="#202622" stroke-width="8"/>
+  <path d="M112 365h110M264 365h112M416 365h110" stroke="#d9d7d0" stroke-width="6"/>
+</svg>

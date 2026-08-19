@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Conceito demonstrativo C para sala</title>
+  <desc id="desc">Ilustração abstrata de sala com elementos reaproveitados.</desc>
+  <rect width="960" height="540" fill="#e4e9df"/>
+  <rect y="370" width="960" height="170" fill="#b7a188"/>
+  <rect x="106" y="74" width="306" height="296" fill="#58725a"/>
+  <path d="M140 108h238v70H140zM140 204h238v70H140zM140 300h238v38H140z" fill="#e4e9df"/>
+  <rect x="516" y="230" width="267" height="140" fill="#f2e8dc"/>
+  <path d="M538 258h223M538 291h223M538 324h223" stroke="#c96e4f" stroke-width="8"/>
+  <path d="M710 370V262M664 370h92" stroke="#202622" stroke-width="10"/>
+  <circle cx="710" cy="240" r="34" fill="#c4d1bd"/>
+</svg>
