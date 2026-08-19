@@ -4,32 +4,35 @@ export const ROLES = ["CLIENT", "SUPPLIER"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const PROJECT_STATES = [
-  "DRAFT",
-  "DESIGNING",
-  "DESIGN_READY",
-  "DESIGN_ERROR",
-  "PLAN_APPROVED",
-  "READY_TO_SHARE",
-  "OPEN_FOR_QUOTES",
-  "AWAITING_ACCEPTANCE",
-  "ACCEPTED",
+  "DRAFT", "DESIGNING", "DESIGN_READY", "DESIGN_ERROR", "PLAN_APPROVED",
+  "READY_TO_SHARE", "OPEN_FOR_QUOTES", "AWAITING_ACCEPTANCE", "ACCEPTED",
 ] as const;
 export type ProjectState = (typeof PROJECT_STATES)[number];
-
 export const VERSION_STATES = ["GENERATING", "READY", "FAILED", "SUPERSEDED", "APPROVED"] as const;
-export type VersionState = (typeof VERSION_STATES)[number];
 export const PROPOSAL_STATES = ["DRAFT", "SUBMITTED", "ACCEPTED", "REJECTED"] as const;
-export type ProposalState = (typeof PROPOSAL_STATES)[number];
 
 export const CatalogKey = z.enum([
   "PAINT_WALLS", "PAINT_CEILING", "REPLACE_FLOOR", "INSTALL_BASEBOARD",
-  "LIGHT_POINT", "CURTAIN", "SOFA", "RUG", "JOINERY", "PLANTS",
+  "LIGHT_POINT", "CURTAIN", "SOFA", "RUG", "SIDE_TABLE", "JOINERY", "PLANTS",
 ]);
 export type CatalogKey = z.infer<typeof CatalogKey>;
+export const ProductCatalogKey = z.enum(["LIGHT_POINT", "RUG", "SIDE_TABLE"]);
+export type ProductCatalogKey = z.infer<typeof ProductCatalogKey>;
+
+export const ProductNeedSchema = z.object({
+  id: z.string().min(1).max(80),
+  catalogKey: ProductCatalogKey,
+  label: z.string().min(2).max(120),
+  searchQuery: z.string().min(3).max(160),
+  requiredTermGroups: z.array(z.array(z.string().min(1).max(30)).min(1).max(5)).min(1).max(4),
+  quantity: z.number().int().min(1).max(20),
+  constraints: z.array(z.string().max(120)).max(8),
+});
+export type ProductNeed = z.infer<typeof ProductNeedSchema>;
 
 export const RoomBriefSchema = z.object({
   city: z.string().trim().min(2).max(80),
-  state: z.string().trim().length(2).transform((v) => v.toUpperCase()),
+  state: z.string().trim().length(2).transform((value) => value.toUpperCase()),
   lengthMm: z.number().int().min(1000).max(20000),
   widthMm: z.number().int().min(1000).max(20000),
   heightMm: z.number().int().min(2000).max(6000),
@@ -56,20 +59,19 @@ export const DesignPlanSchema = z.object({
     materials: z.array(z.string()),
     preserve: z.array(z.string()),
   })),
+  productNeeds: z.array(ProductNeedSchema).min(1).max(8),
   imagePrompt: z.string(),
 });
 export type DesignPlan = z.infer<typeof DesignPlanSchema>;
 
-export const QuantitySchema = z.object({
+export const WorkQuantitySchema = z.object({
   catalogKey: CatalogKey,
   quantityMilli: z.number().int().nonnegative(),
   unit: z.string(),
-  unitPriceCents: z.number().int().nonnegative(),
-  totalCents: z.number().int().nonnegative(),
   referenceCode: z.string(),
   referenceLabel: z.string(),
 });
-export type Quantity = z.infer<typeof QuantitySchema>;
+export type WorkQuantity = z.infer<typeof WorkQuantitySchema>;
 
 export const ProjectSchema = z.object({
   id: z.string(), ownerId: z.string(), title: z.string(), state: z.enum(PROJECT_STATES),
@@ -80,27 +82,64 @@ export type Project = z.infer<typeof ProjectSchema>;
 
 export const DesignVersionSchema = z.object({
   id: z.string(), projectId: z.string(), number: z.number().int().positive(), state: z.enum(VERSION_STATES),
-  summary: z.string(), plan: DesignPlanSchema, imageDataUri: z.string(), quantities: z.array(QuantitySchema),
-  costCents: z.number().int().nonnegative(), co2Grams: z.number().int().nonnegative(), createdAt: z.string(),
+  summary: z.string(), plan: DesignPlanSchema, imageDataUri: z.string(), workQuantities: z.array(WorkQuantitySchema), createdAt: z.string(),
 });
 export type DesignVersion = z.infer<typeof DesignVersionSchema>;
 
-export const ProposalLineSchema = z.object({ catalogKey: CatalogKey, quantityMilli: z.number().int().nonnegative(), priceCents: z.number().int().nonnegative(), note: z.string().max(300) });
+export const ProposalLineSchema = z.object({
+  catalogKey: CatalogKey,
+  quantityMilli: z.number().int().nonnegative(),
+  laborPriceCents: z.number().int().nonnegative(),
+  note: z.string().max(300),
+});
 export type ProposalLine = z.infer<typeof ProposalLineSchema>;
-export const ProposalSchema = z.object({
+export const CreateProposalInputSchema = z.object({
+  lines: z.array(ProposalLineSchema).min(1).max(30),
+  freightCents: z.number().int().nonnegative(),
+  taxCents: z.number().int().nonnegative(),
+  leadDays: z.number().int().positive().max(365),
+  validUntil: z.string().datetime(),
+  includes: z.array(z.string().max(200)).max(30),
+  excludes: z.array(z.string().max(200)).max(30),
+});
+export type CreateProposalInput = z.infer<typeof CreateProposalInputSchema>;
+export const ProposalSchema = CreateProposalInputSchema.extend({
   id: z.string(), opportunityId: z.string(), supplierId: z.string(), state: z.enum(PROPOSAL_STATES),
-  lines: z.array(ProposalLineSchema), freightCents: z.number().int().nonnegative(), taxCents: z.number().int().nonnegative(),
-  totalCents: z.number().int().nonnegative(), leadDays: z.number().int().positive(), validUntil: z.string(), includes: z.array(z.string()), excludes: z.array(z.string()),
+  laborSubtotalCents: z.number().int().nonnegative(), totalCents: z.number().int().nonnegative(),
 });
 export type Proposal = z.infer<typeof ProposalSchema>;
+
+export const DecisionPathKindSchema = z.enum(["LOWEST_UPFRONT", "BEST_USE_EFFICIENCY", "MOST_SUSTAINABLE"]);
+export const SelectedProductSchema = z.object({
+  needId: z.string(), catalogKey: ProductCatalogKey, label: z.string(), quantity: z.number().int().positive(),
+  path: DecisionPathKindSchema, provider: z.enum(["SHOPEE_AFFILIATE", "REPLAY"]), offerId: z.string(),
+  productName: z.string(), shopName: z.string(), productUrl: z.string().url(), offerUrl: z.string().url(),
+  unitPriceCents: z.object({ low: z.number().int().nonnegative(), high: z.number().int().nonnegative() }),
+  totalPriceCents: z.object({ low: z.number().int().nonnegative(), high: z.number().int().nonnegative() }),
+  whatToVerifyPtBr: z.array(z.string()),
+});
+export type SelectedProduct = z.infer<typeof SelectedProductSchema>;
+
 export const OpportunitySchema = z.object({
   id: z.string(), projectId: z.string(), city: z.string(), state: z.string(), title: z.string(), imageDataUri: z.string(),
-  quantities: z.array(QuantitySchema), costCents: z.number().int().nonnegative(), co2Grams: z.number().int().nonnegative(), status: z.enum(["OPEN", "AWAITING_ACCEPTANCE", "ACCEPTED"]), expiresAt: z.string(),
+  workQuantities: z.array(WorkQuantitySchema), selectedProducts: z.array(SelectedProductSchema),
+  materialsEstimateCents: z.number().int().nonnegative(),
+  priceResearch: z.object({ provider: z.enum(["SHOPEE_AFFILIATE", "REPLAY"]), collectedAt: z.string(), noticePtBr: z.string() }),
+  laborPricing: z.literal("SUPPLIER_QUOTE_REQUIRED"),
+  status: z.enum(["OPEN", "AWAITING_ACCEPTANCE", "ACCEPTED"]), expiresAt: z.string(),
 });
 export type Opportunity = z.infer<typeof OpportunitySchema>;
 
 export class DomainError extends Error {
-  constructor(public code: string, message: string, public status = 409) { super(message); this.name = "DomainError"; }
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, message: string, status = 409) {
+    super(message);
+    this.name = "DomainError";
+    this.code = code;
+    this.status = status;
+  }
 }
 
 const transitions: Record<ProjectState, ProjectState[]> = {
@@ -112,25 +151,35 @@ export function assertProjectTransition(from: ProjectState, to: ProjectState) {
   if (!transitions[from].includes(to)) throw new DomainError("ILLEGAL_TRANSITION", `${from} → ${to} não é permitido`);
 }
 
-const priceMap: Record<CatalogKey, { unit: string; price: number; code: string; label: string; factor: number }> = {
-  PAINT_WALLS: { unit: "m²", price: 1_850, code: "88489", label: "Pintura de paredes", factor: 1 },
-  PAINT_CEILING: { unit: "m²", price: 1_650, code: "88488", label: "Pintura de teto", factor: 1 },
-  REPLACE_FLOOR: { unit: "m²", price: 8_900, code: "87262", label: "Piso vinílico", factor: 1.1 },
-  INSTALL_BASEBOARD: { unit: "m", price: 2_800, code: "88650", label: "Rodapé", factor: 1 },
-  LIGHT_POINT: { unit: "un", price: 18_500, code: "93128+103782", label: "Ponto de luz", factor: 1 },
-  CURTAIN: { unit: "un", price: 48_000, code: "SEM_REFERENCIA", label: "Cortina de linho", factor: 1 },
-  SOFA: { unit: "un", price: 320_000, code: "SEM_REFERENCIA", label: "Sofá", factor: 1 },
-  RUG: { unit: "un", price: 78_000, code: "SEM_REFERENCIA", label: "Tapete", factor: 1 },
-  JOINERY: { unit: "un", price: 420_000, code: "SEM_REFERENCIA", label: "Marcenaria", factor: 1 },
-  PLANTS: { unit: "un", price: 16_000, code: "SEM_REFERENCIA", label: "Plantas", factor: 1 },
+const workMeta: Partial<Record<CatalogKey, { unit: string; code: string; label: string }>> = {
+  PAINT_WALLS: { unit: "m²", code: "88489", label: "Pintura de paredes" },
+  PAINT_CEILING: { unit: "m²", code: "88488", label: "Pintura de teto" },
+  REPLACE_FLOOR: { unit: "m²", code: "87262", label: "Instalação de piso" },
+  INSTALL_BASEBOARD: { unit: "m", code: "88650", label: "Instalação de rodapé" },
+  LIGHT_POINT: { unit: "un", code: "93128+103782", label: "Instalação de ponto de luz" },
+  JOINERY: { unit: "un", code: "SEM_REFERENCIA", label: "Instalação de marcenaria" },
 };
 
-function rounded(value: number) { return Math.max(0, Math.round(value)); }
-export function estimateQuantities(brief: RoomBrief, keys: CatalogKey[] = ["PAINT_WALLS", "PAINT_CEILING", "REPLACE_FLOOR", "INSTALL_BASEBOARD", "LIGHT_POINT", "CURTAIN", "SOFA", "RUG", "PLANTS"]): Quantity[] {
-  const l = brief.lengthMm / 1000, w = brief.widthMm / 1000, h = brief.heightMm / 1000;
-  const area = l * w; const walls = 2 * (l + w) * h * 0.85; const baseboard = 2 * (l + w) * 0.9 * 1.1;
-  const values: Partial<Record<CatalogKey, number>> = { PAINT_WALLS: walls, PAINT_CEILING: area, REPLACE_FLOOR: area * 1.1, INSTALL_BASEBOARD: baseboard, LIGHT_POINT: 2, CURTAIN: 1, SOFA: 1, RUG: 1, PLANTS: 3, JOINERY: 0 };
-  return keys.map((catalogKey) => { const meta = priceMap[catalogKey]; const quantity = rounded((values[catalogKey] ?? 1) * 1000); const totalCents = rounded(quantity / 1000 * meta.price); return { catalogKey, quantityMilli: quantity, unit: meta.unit, unitPriceCents: meta.price, totalCents, referenceCode: meta.code, referenceLabel: meta.label }; });
+export function estimateWorkQuantities(brief: RoomBrief, keys: CatalogKey[]): WorkQuantity[] {
+  const length = brief.lengthMm / 1000;
+  const width = brief.widthMm / 1000;
+  const height = brief.heightMm / 1000;
+  const area = length * width;
+  const values: Partial<Record<CatalogKey, number>> = {
+    PAINT_WALLS: 2 * (length + width) * height * 0.85,
+    PAINT_CEILING: area,
+    REPLACE_FLOOR: area * 1.1,
+    INSTALL_BASEBOARD: 2 * (length + width) * 0.9 * 1.1,
+    LIGHT_POINT: 2,
+    JOINERY: 1,
+  };
+  return [...new Set(keys)].flatMap((catalogKey) => {
+    const meta = workMeta[catalogKey];
+    if (!meta) return [];
+    return [{ catalogKey, quantityMilli: Math.max(0, Math.round((values[catalogKey] ?? 1) * 1000)), unit: meta.unit, referenceCode: meta.code, referenceLabel: meta.label }];
+  });
 }
-export function totalQuantities(items: Quantity[]) { return items.reduce((sum, item) => sum + item.totalCents, 0); }
-export function demoBrief(): RoomBrief { return { city: "São Paulo", state: "SP", lengthMm: 4000, widthMm: 3000, heightMm: 2700, style: "contemporâneo acolhedor", budgetCents: 4_500_000, priorities: ["mais luz", "madeira quente"], preserve: ["sem obra estrutural"] }; }
+
+export function demoBrief(): RoomBrief {
+  return { city: "São Paulo", state: "SP", lengthMm: 4000, widthMm: 3000, heightMm: 2700, style: "contemporâneo acolhedor", budgetCents: 4_500_000, priorities: ["mais luz", "madeira quente"], preserve: ["sem obra estrutural"] };
+}
