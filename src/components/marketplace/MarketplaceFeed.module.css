@@ -1,0 +1,400 @@
+.shell {
+  --canvas: var(--obria-canvas, #f4f1ea);
+  --surface: var(--obria-surface, #fff);
+  --ink: var(--obria-ink, #202622);
+  --muted: var(--obria-muted, #66706a);
+  --primary: var(--obria-primary, #b95232);
+  --primary-soft: var(--obria-primary-soft, #f3ddd5);
+  --eco: var(--obria-eco, #58725a);
+  --eco-soft: var(--obria-eco-soft, #e5ece3);
+  --border: var(--obria-border, #d9d7d0);
+  min-height: 100vh;
+  padding: 1.5rem clamp(1rem, 4vw, 4rem) 4rem;
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+.topline,
+.hero,
+.projectStrip,
+.section,
+.footer {
+  width: min(100%, 76rem);
+  margin-inline: auto;
+}
+
+.topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  text-decoration: none;
+}
+
+.brandMark {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  color: var(--surface);
+  background: var(--ink);
+  border-radius: .65rem .2rem .65rem .2rem;
+  font-size: .68rem;
+  letter-spacing: .06em;
+}
+
+.prototypeLabel,
+.demoBadge,
+.demoBadgeInline {
+  color: var(--eco);
+  background: var(--eco-soft);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.prototypeLabel {
+  padding: .55rem .7rem;
+  border: 1px solid color-mix(in srgb, var(--eco) 30%, transparent);
+  border-radius: 999px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 22rem);
+  gap: clamp(2rem, 8vw, 8rem);
+  padding: clamp(4rem, 9vw, 8rem) 0 4rem;
+}
+
+.eyebrow {
+  margin: 0 0 .75rem;
+  color: var(--primary);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 50rem;
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.6rem, 6vw, 5.7rem);
+  font-weight: 500;
+  letter-spacing: -.065em;
+  line-height: .94;
+}
+
+.lead {
+  max-width: 42rem;
+  margin: 1.7rem 0 0;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.heroNote {
+  align-self: end;
+  padding: 1.25rem 0 0 1.4rem;
+  border-left: 2px solid var(--primary);
+}
+
+.heroNote p {
+  margin: .75rem 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.noteNumber,
+.proposalIndex {
+  color: var(--primary);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.projectStrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+}
+
+.projectStrip h2 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+  letter-spacing: -.03em;
+}
+
+.projectStrip p:not(.eyebrow) {
+  margin: .35rem 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.projectMeta {
+  display: grid;
+  gap: .25rem;
+  min-width: 10rem;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.projectMeta strong { color: var(--ink); }
+
+.secondaryAction,
+.outlineAction,
+.textAction {
+  min-height: 2.75rem;
+  color: var(--ink);
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1rem;
+  border: 1px solid var(--ink);
+}
+
+.section { padding-top: clamp(4.5rem, 9vw, 8rem); }
+
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.section h2 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2rem, 3.5vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: -.05em;
+  line-height: 1;
+}
+
+.sectionIntro {
+  max-width: 48rem;
+  margin: 1rem 0 2rem;
+  color: var(--muted);
+  font-size: .92rem;
+  line-height: 1.6;
+}
+
+.filterLabel {
+  display: grid;
+  gap: .35rem;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.filterLabel select {
+  min-height: 2.75rem;
+  padding: 0 .8rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  font: inherit;
+  font-size: .85rem;
+  text-transform: none;
+}
+
+.professionalGrid,
+.proposalGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.professionalGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.proposalGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.professionalCard,
+.proposalCard {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.cardVisual { position: relative; aspect-ratio: 1.45; overflow: hidden; }
+.cardVisual img,
+.proposalImage { display: block; width: 100%; object-fit: cover; }
+.cardVisual img { height: 100%; transition: transform 300ms ease-out; }
+.professionalCard:hover .cardVisual img { transform: scale(1.025); }
+
+.demoBadge {
+  position: absolute;
+  top: .75rem;
+  left: .75rem;
+  padding: .55rem .65rem;
+  border: 1px solid color-mix(in srgb, var(--eco) 30%, transparent);
+}
+
+.matchScore {
+  position: absolute;
+  right: .75rem;
+  bottom: .75rem;
+  padding: .45rem .55rem;
+  color: var(--surface);
+  background: color-mix(in srgb, var(--ink) 90%, transparent);
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.cardBody,
+.proposalBody { padding: 1.2rem; }
+
+.cardTitleRow {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.cardTitleRow h3 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.32rem;
+  font-weight: 500;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+}
+
+.cardTitleRow p,
+.proposalAuthor {
+  margin: .45rem 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+.rating { white-space: nowrap; color: var(--ink); font-size: .8rem; font-weight: 700; }
+.rating span { color: var(--primary); }
+
+.tagList,
+.highlightList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding: 0;
+  margin: 1.15rem 0;
+  list-style: none;
+}
+
+.tagList li {
+  padding: .4rem .5rem;
+  color: var(--muted);
+  background: var(--canvas);
+  font-size: .7rem;
+}
+
+.details { border-top: 1px solid var(--border); font-size: .78rem; }
+.details summary { padding: .85rem 0; color: var(--ink); font-weight: 700; cursor: pointer; }
+.details ul { padding: 0 0 .85rem 1.1rem; margin: 0; color: var(--muted); line-height: 1.6; }
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+  padding-top: 1rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  font-size: .75rem;
+}
+
+.textAction {
+  min-height: 2.3rem;
+  padding: .45rem 0;
+  color: var(--primary);
+  background: transparent;
+  border: 0;
+  text-align: right;
+}
+
+.countLabel { color: var(--muted); font-size: .78rem; }
+.proposalImage { aspect-ratio: 1.78; height: auto; }
+.proposalBody > p { color: var(--muted); font-size: .86rem; line-height: 1.6; }
+.demoBadgeInline { display: inline-block; padding: .45rem .5rem; margin-bottom: .75rem; }
+.proposalFacts { display: flex; justify-content: space-between; gap: .5rem; padding: .8rem 0; margin-top: 1rem; border-block: 1px solid var(--border); color: var(--ink); font-size: .8rem; font-weight: 700; }
+.highlightList { display: grid; gap: .45rem; }
+.highlightList li { color: var(--muted); font-size: .78rem; line-height: 1.45; }
+.highlightList li::before { margin-right: .45rem; color: var(--eco); content: '↗'; }
+.ecoNote { padding: .7rem; color: var(--eco) !important; background: var(--eco-soft); font-size: .75rem !important; }
+
+.outlineAction { width: 100%; padding: .7rem; color: var(--primary); background: transparent; border: 1px solid var(--primary); }
+.outlineAction:hover,
+.outlineAction:focus-visible,
+.secondaryAction:hover,
+.secondaryAction:focus-visible { color: var(--surface); background: var(--primary); }
+
+.emptyState { padding: 2rem; background: var(--surface); border: 1px dashed var(--border); }
+.emptyState h3 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 500; }
+.emptyState p { margin: .5rem 0 0; color: var(--muted); }
+
+.footer { display: flex; justify-content: space-between; gap: 1.5rem; padding-top: 4rem; margin-top: 5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.liveNotice { position: fixed; right: 1rem; bottom: 1rem; max-width: 24rem; padding: .85rem 1rem; margin: 0; color: var(--ink); background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); font-size: .8rem; line-height: 1.4; }
+
+.shell :global(a:focus-visible),
+.shell :global(button:focus-visible),
+.shell :global(select:focus-visible),
+.shell :global(summary:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; gap: 2rem; }
+  .heroNote { max-width: 25rem; }
+  .projectStrip { grid-template-columns: 1fr 1fr; }
+  .secondaryAction { justify-content: center; }
+  .professionalGrid,
+  .proposalGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .shell { padding-inline: 1rem; }
+  .topline { padding-bottom: 1.5rem; }
+  .prototypeLabel { font-size: .6rem; }
+  .hero { padding-block: 3.5rem 2.5rem; }
+  .hero h1 { font-size: clamp(2.55rem, 14vw, 4.4rem); }
+  .projectStrip,
+  .professionalGrid,
+  .proposalGrid { grid-template-columns: 1fr; }
+  .projectStrip { gap: 1rem; }
+  .sectionHeading { align-items: start; flex-direction: column; }
+  .filterLabel,
+  .filterLabel select { width: 100%; }
+  .footer { flex-direction: column; gap: .4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardVisual img { transition: none; }
+}

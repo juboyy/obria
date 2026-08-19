@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Conceito demonstrativo A para sala</title>
+  <desc id="desc">Ilustração abstrata de uma sala acolhedora com luz quente.</desc>
+  <rect width="960" height="540" fill="#f2e8dc"/>
+  <rect y="366" width="960" height="174" fill="#d3b69d"/>
+  <rect x="96" y="86" width="264" height="210" fill="#c96e4f"/>
+  <rect x="125" y="112" width="206" height="143" fill="#eed7c3"/>
+  <path d="M595 100h12v199h-12zM548 100h105v12H548z" fill="#202622"/>
+  <path d="M601 112v55M565 112v55" stroke="#202622" stroke-width="6"/>
+  <path d="M523 166h156l-34 74h-87z" fill="#b95232"/>
+  <rect x="248" y="371" width="270" height="86" fill="#58725a"/>
+  <path d="M270 457v34M495 457v34" stroke="#202622" stroke-width="10"/>
+  <circle cx="798" cy="158" r="48" fill="#c4d1bd"/>
+  <path d="M798 206v160M742 366h111" stroke="#58725a" stroke-width="10"/>
+</svg>
