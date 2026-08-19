@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import type { ConfirmedScopeItem, DualEstimateResponse, EstimateResult, GeneratedVariant, Generation, MarketplaceProjectPost, MoneyRange, Project, RoomType } from '@/types';
+import type { ConfirmedScopeItem, DualEstimateResponse, EstimateResult, MarketplaceProjectPost, MoneyRange, Project, RoomType } from '@/types';
 
-const DEMO_PROJECT_ID = 'demo-project-001';
 const DEMO_ROOM_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720"%3E%3Crect width="960" height="720" fill="%23ded8cc"/%3E%3Cpath d="M0 490 960 420v300H0z" fill="%23ae9b83"/%3E%3Cpath d="M120 90h310v290H120z" fill="%23f3eee5" stroke="%23202622" stroke-width="8"/%3E%3Crect x="155" y="125" width="240" height="195" fill="%239cb7b4"/%3E%3Cpath d="M480 200h240v270H480z" fill="%23bc6f4f"/%3E%3Ccircle cx="650" cy="310" r="70" fill="%23d49d62"/%3E%3C/svg%3E';
-const conceptCards = [
+const conceptDefinitions = [
   { id: 'concept-a', letter: 'A', title: 'Luz de fim de tarde', descriptor: 'Paredes claras, madeira suave e uma leitura mais luminosa do ambiente.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23ece5d7"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23c3ae8e"/%3E%3Crect x="90" y="80" width="250" height="280" fill="%23fffaf0" stroke="%23202622" stroke-width="8"/%3E%3Crect x="115" y="105" width="200" height="230" fill="%23b8d0cc"/%3E%3Cpath d="M420 330h300v130H420z" fill="%23b77957"/%3E%3Ccircle cx="650" cy="215" r="90" fill="%23e1b96c"/%3E%3Cpath d="M765 155h34v285h-34z" fill="%23627d63"/%3E%3C/svg%3E' },
   { id: 'concept-b', letter: 'B', title: 'Texturas honestas', descriptor: 'Base neutra com cerâmica artesanal e contraste de materiais sem excessos.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23d7d0c3"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23978d7b"/%3E%3Cpath d="M100 90h280v280H100z" fill="%23f3eee5" stroke="%23202622" stroke-width="8"/%3E%3Crect x="130" y="125" width="220" height="215" fill="%237ca29d"/%3E%3Cg fill="%23b95232"%3E%3Ccircle cx="470" cy="180" r="34"/%3E%3Ccircle cx="540" cy="150" r="24"/%3E%3Ccircle cx="600" cy="205" r="40"/%3E%3C/g%3E%3Cpath d="M410 380h345v95H410z" fill="%23ad7454"/%3E%3Cpath d="M785 145h30v310h-30z" fill="%2358725a"/%3E%3C/svg%3E' },
   { id: 'concept-c', letter: 'C', title: 'Verde silencioso', descriptor: 'Mais plantas, luz quente e elementos preservados para um ritmo tranquilo.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23dfe8df"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23b3a58a"/%3E%3Crect x="115" y="80" width="260" height="270" fill="%23f4f1ea" stroke="%23202622" stroke-width="8"/%3E%3Crect x="140" y="105" width="210" height="220" fill="%23aac6c0"/%3E%3Cpath d="M450 380h300v90H450z" fill="%23c38865"/%3E%3Cpath d="M780 455v-260m0 55-75-60m75 115 70-70" stroke="%2358725a" stroke-width="20" fill="none" stroke-linecap="round"/%3E%3Ccircle cx="705" cy="430" r="45" fill="%2358725a"/%3E%3Ccircle cx="850" cy="445" r="50" fill="%2358725a"/%3E%3C/svg%3E' },
@@ -14,8 +13,9 @@ const conceptCards = [
 ] as const;
 
 type JourneyStage = 'intake' | 'generating' | 'ideas' | 'refinement' | 'scope' | 'estimates' | 'handoff';
-type DemoConcept = (typeof conceptCards)[number];
+type DemoConcept = Omit<(typeof conceptDefinitions)[number], 'image'> & { image: string };
 type ScopeDisplay = { id: string; label: string; quantity: number; unit: string; source: string; note?: string; warning?: boolean };
+type CreatedDesigns = { projectId: string; versions: Array<{ imageDataUri: string }> };
 const scopeDisplay: ScopeDisplay[] = [
   { id: 'scope-paint', label: 'Pintura de paredes', quantity: 50.4, unit: 'm²', source: 'calculado a partir da área informada' },
   { id: 'scope-floor', label: 'Instalação de piso', quantity: 19.8, unit: 'm²', source: 'área + 10% de perda prevista' },
@@ -32,6 +32,27 @@ const roomOptions: ReadonlyArray<{ value: RoomType; label: string }> = [{ value:
 const generationMessages = ['Preparando a foto…', 'Preservando a estrutura do ambiente…', 'Criando quatro caminhos visuais…', 'Finalizando materiais e luz…'];
 function formatMoney(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value); }
 function readScope(item: ConfirmedScopeItem): ScopeDisplay { const candidate = item as unknown as ScopeDisplay; return scopeDisplay.find((row) => row.id === candidate.id) ?? candidate; }
+async function prepareSourceImage(file: File) {
+  if (file.size > 15 * 1024 * 1024) throw new Error('A imagem precisa ter até 15 MB.');
+  const bitmap = await createImageBitmap(file);
+  try {
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Não consegui preparar a imagem escolhida.');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const dataUri = canvas.toDataURL('image/jpeg', 0.82);
+    if (dataUri.length > 4 * 1024 * 1024) throw new Error('Não consegui reduzir a imagem para envio. Escolha uma foto menor.');
+    return dataUri;
+  } finally {
+    bitmap.close();
+  }
+}
+
 
 export default function HomePage() {
   const [stage, setStage] = useState<JourneyStage>('intake');
@@ -45,6 +66,8 @@ export default function HomePage() {
   const [nudgeVisible, setNudgeVisible] = useState(true);
   const [formError, setFormError] = useState('');
   const [progressStep, setProgressStep] = useState(0);
+  const [projectId, setProjectId] = useState('demo-project-001');
+  const [conceptCards, setConceptCards] = useState<DemoConcept[]>(() => conceptDefinitions.map((concept) => ({ ...concept })));
   const [selectedVariantId, setSelectedVariantId] = useState('concept-a');
   const [refinement, setRefinement] = useState('');
   const [refinementStatus, setRefinementStatus] = useState<'idle' | 'working' | 'done'>('idle');
@@ -59,18 +82,64 @@ export default function HomePage() {
   const [includeOriginalImage, setIncludeOriginalImage] = useState(false);
   const [marketplacePost, setMarketplacePost] = useState<MarketplaceProjectPost | null>(null);
   const [largeImage, setLargeImage] = useState<DemoConcept | null>(null);
-  const generationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refinementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (generationTimer.current) clearTimeout(generationTimer.current); if (refinementTimer.current) clearTimeout(refinementTimer.current); }, []);
-  const selectedConcept = useMemo(() => conceptCards.find((concept) => concept.id === selectedVariantId) ?? conceptCards[0], [selectedVariantId]);
+  useEffect(() => () => { clearTimeout(refinementTimer.current ?? undefined); }, []);
+  const selectedConcept = useMemo(() => conceptCards.find((concept) => concept.id === selectedVariantId) ?? conceptCards[0], [conceptCards, selectedVariantId]);
   const visibleScopeItems = scopeItems.filter((item) => !removedScopeIds.includes(readScope(item).id));
   const areaValue = Number(area) || 0;
-  const demoProject = { id: DEMO_PROJECT_ID, city, uf, roomType, areaM2: areaValue, originalInstruction: request, status: 'reviewing_options' } as unknown as Project;
-  const generationVariants = conceptCards.map((concept, index) => ({ id: concept.id, ordinal: index + 1, imageUrl: concept.image, label: concept.letter })) as unknown as GeneratedVariant[];
-  const demoGeneration = { id: 'generation-demo-001', projectId: demoProject.id, kind: 'initial', status: 'completed', variants: generationVariants } as unknown as Generation;
-  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; if (!file.type.startsWith('image/')) { setFormError('Escolha uma imagem JPG, PNG ou WebP para continuar.'); return; } if (file.size > 5 * 1024 * 1024) { setFormError('A imagem precisa ter até 5 MB.'); return; } setFormError(''); setSourceImage(URL.createObjectURL(file)); }
+  const demoProject = { id: projectId, city, uf, roomType, areaM2: areaValue, originalInstruction: request, status: 'reviewing_options' } as unknown as Project;
+  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setFormError('Escolha uma imagem JPG, PNG ou WebP para continuar.');
+      return;
+    }
+    try {
+      const imageDataUri = await prepareSourceImage(file);
+      setSourceImage(imageDataUri);
+      setFormError('');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Não consegui ler a imagem escolhida.');
+    }
+  }
   function appendChip(text: string) { setRequest((current) => (current ? `${current} ${text}.` : text)); setNudgeVisible(false); }
-  function handleGenerate() { if (!sourceImage || !city.trim() || !uf.trim() || !roomType || areaValue <= 0 || request.trim().length < 10) { setFormError('Preencha a cidade, o ambiente, uma área válida e descreva a mudança em pelo menos 10 caracteres.'); return; } setFormError(''); setProgressStep(0); setStage('generating'); generationTimer.current = setTimeout(() => { setProgressStep(generationMessages.length - 1); setStage('ideas'); }, 2200); }
+  async function handleGenerate() {
+    if (!sourceImage || sourceImage.startsWith('data:image/svg+xml') || !city.trim() || !uf.trim() || !roomType || areaValue <= 0 || request.trim().length < 10) {
+      setFormError('Envie uma foto JPG, PNG ou WebP e preencha cidade, ambiente, área válida e uma descrição com pelo menos 10 caracteres.');
+      return;
+    }
+    setFormError('');
+    setProgressStep(0);
+    setStage('generating');
+    try {
+      const response = await fetch('/api/designs', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          sourceImageDataUri: sourceImage,
+          request: request.trim(),
+          roomType,
+          areaM2: areaValue,
+          city: city.trim(),
+          uf: uf.trim().toUpperCase(),
+          finishTier,
+        }),
+      });
+      const payload = await response.json().catch(() => null) as (CreatedDesigns & { error?: { message?: string } }) | null;
+      if (!response.ok) throw new Error(payload?.error?.message ?? `O serviço respondeu com erro ${response.status}. Tente novamente.`);
+      if (!Array.isArray(payload?.versions) || payload.versions.length !== conceptDefinitions.length || payload.versions.some((version) => !version?.imageDataUri)) throw new Error('A geração não devolveu as quatro imagens esperadas. Tente novamente.');
+      setProjectId(payload.projectId);
+      setProgressStep(1);
+      setConceptCards(conceptDefinitions.map((concept, index) => ({ ...concept, image: payload.versions[index]!.imageDataUri })));
+      setSelectedVariantId(conceptDefinitions[0].id);
+      setProgressStep(generationMessages.length - 1);
+      setStage('ideas');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Não consegui gerar as propostas agora. Tente novamente.');
+      setStage('intake');
+    }
+  }
   function handleRefine() { if (refinement.trim().length < 4) return; setRefinementStatus('working'); refinementTimer.current = setTimeout(() => setRefinementStatus('done'), 1500); }
   function approveRefinement() { setScopeItems(initialScope); setRemovedScopeIds([]); setStage('scope'); }
   function updateQuantity(id: string, value: string) { const numeric = Number(value); setScopeQuantities((current) => ({ ...current, [id]: Number.isFinite(numeric) ? numeric : 0 })); }
@@ -79,11 +148,11 @@ export default function HomePage() {
   const currentStep = stage === 'intake' || stage === 'generating' ? 0 : stage === 'ideas' || stage === 'refinement' ? 1 : stage === 'scope' ? 2 : stage === 'estimates' ? 3 : 4;
   const stageLabel = stage === 'intake' ? 'Seu espaço' : stage === 'generating' ? 'Preparando ideias' : stage === 'ideas' || stage === 'refinement' ? 'Ideias' : stage === 'scope' ? 'Escopo' : stage === 'estimates' ? 'Estimativas' : 'Profissionais';
   return <main className="app-shell">
-    <header className="topbar"><Link className="brand" href="/" aria-label="ObrIA, início"><span className="brand-mark" aria-hidden="true">O</span><span><strong>ObrIA</strong><small>do desejo ao próximo passo</small></span></Link><div className="demo-badge"><span className="status-dot" aria-hidden="true" />Demonstração local</div></header>
+    <header className="topbar"><Link className="brand" href="/" aria-label="ObrIA, início"><span className="brand-mark" aria-hidden="true">O</span><span><strong>ObrIA</strong><small>do desejo ao próximo passo</small></span></Link><div className="demo-badge"><span className="status-dot" aria-hidden="true" />Demonstração ao vivo</div></header>
     <section className="stage-rail" aria-label="Etapas do projeto"><div className="stage-intro"><span className="eyebrow">PROJETO SEM PRESSA</span><span className="stage-current">{stageLabel}</span></div><ol className="stepper">{['Seu espaço', 'Ideias', 'Escopo', 'Estimativas', 'Profissionais'].map((label, index) => <li key={label} className={index === currentStep ? 'is-current' : index < currentStep ? 'is-done' : ''}><span className="step-number" aria-hidden="true">{index < currentStep ? '✓' : index + 1}</span><span>{label}</span></li>)}</ol></section>
-    <div className="workspace"><div className="content-column"><div className="demo-note" role="note"><span aria-hidden="true">i</span><p>Você está vendo uma demonstração com dados fictícios. Nenhum provedor de imagem ou profissional foi chamado.</p></div>
+    <div className="workspace"><div className="content-column"><div className="demo-note" role="note"><span aria-hidden="true">i</span><p>As imagens são geradas pela OpenAI a partir da foto enviada. Nenhum profissional é acionado nesta demonstração.</p></div>
       {stage === 'intake' && <section className="journey-panel reveal" aria-labelledby="intake-title"><PanelHeading eyebrow="01 / SEU ESPAÇO" title="Vamos começar pelo ambiente que você imagina." description="Uma foto e algumas decisões simples bastam para abrir caminhos visuais — sem prometer uma medição técnica." stamp="1 de 5" /><div className="intake-grid"><div className="photo-column"><div className="photo-frame"><img src={sourceImage} alt="Prévia do ambiente selecionado para a demonstração" /><span className="photo-label">Imagem de demonstração</span></div><label className="upload-button" htmlFor="room-photo">Trocar foto do ambiente<input id="room-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} /></label><small className="field-help">JPG, PNG ou WebP · até 5 MB · a imagem fica apenas nesta sessão.</small></div><div className="form-column"><div className="field-row two-up"><label><span>Cidade</span><input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ex.: São Paulo" /></label><label><span>UF</span><input value={uf} maxLength={2} onChange={(event) => setUf(event.target.value.toUpperCase())} placeholder="SP" /></label></div><div className="field-row two-up"><label><span>Tipo de ambiente</span><select value={String(roomType)} onChange={(event) => setRoomType(event.target.value as RoomType)}>{roomOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label><label><span>Área aproximada</span><span className="input-suffix"><input type="number" min="1" value={area} onChange={(event) => setArea(event.target.value)} /><em>m²</em></span></label></div><fieldset className="field-group"><legend>Nível de acabamento</legend><div className="option-row">{[['econômico', 'Essencial'], ['padrão', 'Equilibrado'], ['premium', 'Mais detalhes']].map(([value, label]) => <button type="button" key={value} className={`choice-pill ${finishTier === value ? 'is-selected' : ''}`} aria-pressed={finishTier === value} onClick={() => setFinishTier(value)}>{label}</button>)}</div></fieldset><label className="field-group"><span>O que você quer mudar?</span><textarea value={request} maxLength={800} minLength={10} onChange={(event) => setRequest(event.target.value)} rows={4} /><small>{request.length}/800 · Descreva só o que importa agora.</small></label><div className="prompt-chips" aria-label="Atalhos de pedido">{['Trocar piso', 'Pintar paredes', 'Melhorar iluminação', 'Mais aconchegante', 'Estilo contemporâneo', 'Preservar o que já existe'].map((chip) => <button type="button" key={chip} onClick={() => appendChip(chip)}>+ {chip}</button>)}</div></div></div>{nudgeVisible && <aside className="nudge-card"><span className="nudge-icon" aria-hidden="true">↺</span><div><strong>Quer reduzir desperdício?</strong><p>Considere preservar ou renovar elementos existentes antes de substituir tudo.</p></div><button type="button" onClick={() => appendChip('Quero preservar o que já existe quando for viável')}>Adicionar ao pedido</button><button type="button" className="text-button" onClick={() => setNudgeVisible(false)}>Agora não</button></aside>}{formError && <div className="alert alert-error" role="alert"><strong>Antes de criar as propostas:</strong> {formError}</div>}<div className="panel-actions"><span className="action-note">Leva menos de um minuto · você decide o caminho.</span><button className="primary-button" type="button" onClick={handleGenerate}>Criar 4 propostas <span aria-hidden="true">→</span></button></div></section>}
-      {stage === 'generating' && <section className="journey-panel reveal" aria-labelledby="generation-title" aria-busy="true"><PanelHeading eyebrow="02 / IDEIAS" title="Abrindo quatro possibilidades para este espaço." description="Esta é uma passagem demonstrativa local. Não há porcentagem inventada nem chamada de provedor." /><div className="generation-layout"><div className="source-preview"><img src={sourceImage} alt="Foto original do ambiente" /><span>Foto de referência</span></div><div className="generation-status"><div className="status-orbit" aria-hidden="true"><span /></div><p className="live-copy" aria-live="polite">{generationMessages[progressStep]}</p><ol className="generation-list">{generationMessages.map((message, index) => <li key={message} className={index <= progressStep ? 'is-active' : ''}><span aria-hidden="true">{index < progressStep ? '✓' : index === progressStep ? '·' : '○'}</span>{message}</li>)}</ol><p className="quiet-note">As propostas preservam a perspectiva e os elementos permanentes da foto. São referências visuais, não avaliação estrutural.</p></div></div><div className="skeleton-gallery" aria-label="Quatro propostas sendo preparadas">{conceptCards.map((concept) => <div className="concept-skeleton" key={concept.id}><div /><span>{concept.letter}</span></div>)}</div></section>}
+      {stage === 'generating' && <section className="journey-panel reveal" aria-labelledby="generation-title" aria-busy="true"><PanelHeading eyebrow="02 / IDEIAS" title="Abrindo quatro possibilidades para este espaço." description="A OpenAI está criando quatro propostas visuais a partir da sua foto. Isso pode levar alguns minutos." /><div className="generation-layout"><div className="source-preview"><img src={sourceImage} alt="Foto original do ambiente" /><span>Foto de referência</span></div><div className="generation-status"><div className="status-orbit" aria-hidden="true"><span /></div><p className="live-copy" aria-live="polite">{generationMessages[progressStep]}</p><ol className="generation-list">{generationMessages.map((message, index) => <li key={message} className={index <= progressStep ? 'is-active' : ''}><span aria-hidden="true">{index < progressStep ? '✓' : index === progressStep ? '·' : '○'}</span>{message}</li>)}</ol><p className="quiet-note">As propostas preservam a perspectiva e os elementos permanentes da foto. São referências visuais, não avaliação estrutural.</p></div></div><div className="skeleton-gallery" aria-label="Quatro propostas sendo preparadas">{conceptCards.map((concept) => <div className="concept-skeleton" key={concept.id}><div /><span>{concept.letter}</span></div>)}</div></section>}
       {stage === 'ideas' && <section className="journey-panel reveal" aria-labelledby="ideas-title"><PanelHeading eyebrow="02 / IDEIAS" title="Qual destes caminhos parece mais seu?" description="Quatro referências visuais para conversar sobre intenção. Nenhuma delas é orçamento ou promessa técnica." stamp="4 propostas" /><div className="concept-grid">{conceptCards.map((concept) => <article className={`concept-card ${selectedVariantId === concept.id ? 'is-selected' : ''}`} key={concept.id}><button type="button" className="concept-select" aria-pressed={selectedVariantId === concept.id} onClick={() => setSelectedVariantId(concept.id)}><div className="concept-image-wrap"><img src={concept.image} alt={`Proposta ${concept.letter}: ${concept.title}, referência visual demonstrativa`} /><span className="concept-letter">{concept.letter}</span><span className="concept-demo">Demonstração</span></div><div className="concept-copy"><div><h2>{concept.title}</h2><p>{concept.descriptor}</p></div><span className="selection-mark" aria-hidden="true">{selectedVariantId === concept.id ? '✓' : ''}</span></div></button><button type="button" className="enlarge-button" onClick={() => setLargeImage(concept)}>Ampliar imagem</button></article>)}</div><div className="compare-strip"><div><strong>Antes e depois, sem truque.</strong><span>Você escolheu {selectedConcept.title}. Compare a referência original antes de ajustar.</span></div><div className="compare-pair"><img src={sourceImage} alt="Ambiente original" /><span aria-hidden="true">→</span><img src={selectedConcept.image} alt={`Referência selecionada ${selectedConcept.letter}`} /></div></div><div className="panel-actions sticky-action"><span className="action-note">Selecionada: proposta {selectedConcept.letter} · você pode mudar.</span><button className="primary-button" type="button" onClick={() => setStage('refinement')}>Continuar com esta proposta <span aria-hidden="true">→</span></button></div>{largeImage && <dialog className="image-dialog" open aria-labelledby="dialog-title"><button type="button" className="dialog-close" onClick={() => setLargeImage(null)} aria-label="Fechar imagem ampliada">×</button><img src={largeImage.image} alt={`Proposta ${largeImage.letter}: ${largeImage.title}`} /><div><span className="eyebrow">PROPOSTA {largeImage.letter}</span><h2 id="dialog-title">{largeImage.title}</h2><p>{largeImage.descriptor}</p></div></dialog>}</section>}
       {stage === 'refinement' && <section className="journey-panel reveal" aria-labelledby="refinement-title"><PanelHeading eyebrow="03 / AJUSTES" title="A imagem ajuda a conversar. O ajuste deixa a conversa mais precisa." description={`Peça uma única mudança focada. Usaremos a proposta ${selectedConcept.letter} como ponto de partida nesta demonstração.`} /><div className="selected-mini"><img src={selectedConcept.image} alt="Proposta escolhida" /><span>Proposta {selectedConcept.letter}</span></div>{refinementStatus === 'working' ? <div className="refinement-progress" role="status" aria-live="polite"><div className="status-orbit" aria-hidden="true"><span /></div><strong>Aplicando seu ajuste à referência…</strong><p>Demonstração local · preservando o restante da cena.</p></div> : refinementStatus === 'done' ? <div className="refinement-done" role="status"><div className="done-image"><img src={selectedConcept.image} alt={`Proposta ${selectedConcept.letter} com ajuste demonstrativo`} /><span>Ajuste aplicado · demonstração</span></div><div><span className="eyebrow">REVISÃO</span><h2>O pedido ficou mais focado.</h2><p>“{refinement}” foi aplicado como uma indicação visual. Confirme para transformar a intenção em escopo editável.</p><button className="primary-button" type="button" onClick={() => { setScopeItems(initialScope); setStage('scope'); }}>Aprovar e definir escopo <span aria-hidden="true">→</span></button></div></div> : <div className="refinement-composer"><label className="field-group"><span>O que você quer ajustar nesta versão?</span><textarea value={refinement} onChange={(event) => setRefinement(event.target.value)} rows={4} placeholder="Ex.: mais luz natural, sem mudar o piso…" /><small>Uma mudança por vez deixa o resultado mais claro.</small></label><div className="prompt-chips">{['Mais luz natural', 'Menos mudanças', 'Preserve o piso atual', 'Troque só a cor das paredes', 'Materiais de aparência natural'].map((chip) => <button type="button" key={chip} onClick={() => setRefinement(chip)}>{chip}</button>)}</div><div className="panel-actions"><span className="action-note">Você ainda pode aprovar sem ajustar.</span><div className="button-group"><button className="secondary-button" type="button" onClick={() => { setScopeItems(initialScope); setStage('scope'); }}>Aprovar e calcular estimativas</button><button className="primary-button" type="button" disabled={refinement.trim().length < 4} onClick={handleRefine}>Gerar novo ajuste <span aria-hidden="true">→</span></button></div></div></div>}</section>}
       {stage === 'scope' && <section className="journey-panel reveal" aria-labelledby="scope-title"><PanelHeading eyebrow="04 / ESCOPO" title="Vamos confirmar o que entra antes de falar em dinheiro." description="A imagem sugere. Você confirma. Os valores abaixo são editáveis e deixam claro de onde cada quantidade veio." stamp="até 3 perguntas" /><div className="question-block"><div className="section-kicker"><span>PERGUNTAS OBJETIVAS</span><small>Isso altera a estimativa</small></div><div className="question-grid"><label><span>Quantos pontos de iluminação deseja alterar?</span><select value={questionLighting} onChange={(event) => setQuestionLighting(event.target.value)}><option value="1">1 ponto</option><option value="2">2 pontos</option><option value="3">3 pontos</option><option value="4">4 pontos</option></select></label><label><span>O piso será removido ou instalado sobre o atual?</span><select value={questionFloor} onChange={(event) => setQuestionFloor(event.target.value)}><option value="sobre">Instalar sobre o atual, se viável</option><option value="remover">Remover o piso atual</option><option value="decidir">Decidir na vistoria</option></select></label><fieldset><legend>Deseja pintar também o teto?</legend><div className="radio-row"><label><input type="radio" name="ceiling" checked={questionCeiling === 'sim'} onChange={() => setQuestionCeiling('sim')} /> Sim</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'nao'} onChange={() => setQuestionCeiling('nao')} /> Não</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'decidir'} onChange={() => setQuestionCeiling('decidir')} /> Decidir depois</label></div></fieldset></div></div>{visibleScopeItems.length === 0 ? <div className="empty-state" role="status"><h2>Seu escopo está vazio.</h2><p>Recoloque os itens demonstrativos para continuar.</p><button className="secondary-button" type="button" onClick={() => { setScopeItems(initialScope); setRemovedScopeIds([]); }}>Recolocar itens</button></div> : <div className="scope-list"><div className="section-kicker"><span>ITENS CONFIRMÁVEIS</span><small>{visibleScopeItems.length} itens nesta demonstração</small></div>{visibleScopeItems.map((item) => { const row = readScope(item); return <article className={`scope-row ${row.warning ? 'has-warning' : ''}`} key={row.id}><span className="scope-check" aria-hidden="true">✓</span><div className="scope-main"><div className="scope-row-heading"><h2>{row.label}</h2>{row.warning && <span className="warning-badge">revisão profissional</span>}</div><p>{row.source}</p>{row.note && <small>{row.note}</small>}</div><label className="quantity-field"><span>Quantidade</span><span className="input-suffix"><input type="number" min="0" step="0.1" value={scopeQuantities[row.id] ?? row.quantity} onChange={(event) => updateQuantity(row.id, event.target.value)} /><em>{row.unit}</em></span></label><button type="button" className="icon-button" onClick={() => setRemovedScopeIds((current) => [...current, row.id])} aria-label={`Remover ${row.label}`}>×</button></article>; })}</div>}<div className="scope-footer"><p><strong>O que não está aqui:</strong> estrutura, elétrica, hidráulica e medidas finais. Serão pontos de vistoria.</p><button className="primary-button" type="button" disabled={visibleScopeItems.length === 0} onClick={() => setStage('estimates')}>Comparar estimativas <span aria-hidden="true">→</span></button></div></section>}
