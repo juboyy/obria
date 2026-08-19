@@ -88,7 +88,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
     return (
       <main className={styles.shell}>
         <div className={styles.topline}>
-          <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
+          <Link className={styles.brand} href="/" aria-label="ObrIA, início"><span className={styles.brandMark} aria-hidden="true">IA</span><span>ObrIA</span></Link>
           <span className={styles.prototypeLabel}>Marketplace protótipo</span>
         </div>
         <section className={styles.success} aria-labelledby="recovery-title">
@@ -107,7 +107,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
     return (
       <main className={styles.shell}>
         <div className={styles.topline}>
-          <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
+          <Link className={styles.brand} href="/" aria-label="ObrIA, início"><span className={styles.brandMark} aria-hidden="true">IA</span><span>ObrIA</span></Link>
           <span className={styles.prototypeLabel}>Marketplace protótipo</span>
         </div>
         <section className={styles.success} aria-labelledby="success-title">
@@ -140,7 +140,7 @@ export function PublishPreview({ projectId }: PublishPreviewProps) {
   return (
     <main className={styles.shell}>
       <div className={styles.topline}>
-        <Link className={styles.brand} href="/" aria-label="Obra Clara, início"><span className={styles.brandMark} aria-hidden="true">OC</span><span>Obra Clara</span></Link>
+        <Link className={styles.brand} href="/" aria-label="ObrIA, início"><span className={styles.brandMark} aria-hidden="true">IA</span><span>ObrIA</span></Link>
         <span className={styles.prototypeLabel}>Marketplace protótipo</span>
       </div>
 

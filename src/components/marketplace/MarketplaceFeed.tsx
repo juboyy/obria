@@ -57,9 +57,9 @@ export function MarketplaceFeed() {
   return (
     <main className={styles.shell}>
       <div className={styles.topline}>
-        <Link className={styles.brand} href="/" aria-label="Obra Clara, início">
-          <span className={styles.brandMark} aria-hidden="true">OC</span>
-          <span>Obra Clara</span>
+        <Link className={styles.brand} href="/" aria-label="ObrIA, início">
+          <span className={styles.brandMark} aria-hidden="true">IA</span>
+          <span>ObrIA</span>
         </Link>
         <span className={styles.prototypeLabel}>Marketplace protótipo</span>
       </div>
@@ -197,7 +197,7 @@ export function MarketplaceFeed() {
       </section>
 
       <footer className={styles.footer}>
-        <p>Obra Clara · Experiência de demonstração para planejamento de reformas.</p>
+        <p>ObrIA · Experiência de demonstração para planejamento de reformas.</p>
         <p>Valores são faixas preliminares. Medição, vistoria e orçamento executivo continuam necessários.</p>
       </footer>
 
