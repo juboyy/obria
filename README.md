@@ -1,8 +1,8 @@
-# Obra Clara
+# ObrIA
 
-> **Obra Clara transforma uma foto e a intenção de uma reforma em um plano preliminar comparável, pronto para ser levado a profissionais, sem fingir medição técnica nem contratação.**
+> **ObrIA transforma uma foto e a intenção de uma reforma em um plano preliminar comparável, pronto para ser levado a profissionais, sem fingir medição técnica nem contratação.**
 
-Obra Clara é uma experiência guiada para quem está planejando reformar um ambiente. A pessoa visualiza alternativas, escolhe um caminho, confirma o escopo, compara duas formas de estimar o trabalho e prepara um pedido estruturado para avaliação profissional.
+ObrIA é uma experiência guiada para quem está planejando reformar um ambiente. A pessoa visualiza alternativas, escolhe um caminho, confirma o escopo, compara duas formas de estimar o trabalho e prepara um pedido estruturado para avaliação profissional.
 
 > **Limites da demonstração:** este repositório contém uma aplicação local para apresentar a jornada P0. O marketplace, os perfis, as propostas e os valores são fictícios e locais; nenhuma integração externa ou contratação real é pressuposta.
 
