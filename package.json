@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "lint": "node --check scripts/check-syntax.mjs",
-    "test": "node --test",
-    "test:e2e": "node scripts/e2e-smoke.mjs",
     "build": "next build",
     "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "node scripts/product-research-smoke.mjs replay",
     "demo:record": "node scripts/demo-record.mjs",
     "demo:reset": "node scripts/demo-reset.mjs",
     "demo:determinism": "node scripts/demo-determinism.mjs",
@@ -17,6 +18,8 @@
     "product-research:smoke": "node scripts/product-research-smoke.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.112.3",
     "next": "15.5.19",
     "react": "19.2.7",
     "react-dom": "19.2.7",
@@ -24,9 +27,13 @@
   },
   "packageManager": "pnpm@11.21.0",
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.6",
     "@types/node": "26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "typescript": "5.8.2"
+    "eslint": "9.27.0",
+    "eslint-config-next": "15.5.19",
+    "typescript": "5.8.2",
+    "vitest": "4.1.11"
   }
 }

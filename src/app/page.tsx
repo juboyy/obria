@@ -1,10 +1,8 @@
 'use client';
 
-import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { calculateDualEstimate } from '@/lib/estimate/calculate';
-import { MARKETPLACE_POST_STORAGE_KEY } from '@/lib/marketplace/handoff';
-import type { ConfirmedScopeItem, EstimateResult, FinishTier, MarketplaceProjectPost, MoneyRange, Project, RoomType, ScopeCategory, ScopeUnit } from '@/types';
+import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import type { ConfirmedScopeItem, DualEstimateResponse, EstimateResult, GeneratedVariant, Generation, MarketplaceProjectPost, MoneyRange, Project, RoomType } from '@/types';
 
 const DEMO_PROJECT_ID = 'demo-project-001';
 const DEMO_ROOM_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720"%3E%3Crect width="960" height="720" fill="%23ded8cc"/%3E%3Cpath d="M0 490 960 420v300H0z" fill="%23ae9b83"/%3E%3Cpath d="M120 90h310v290H120z" fill="%23f3eee5" stroke="%23202622" stroke-width="8"/%3E%3Crect x="155" y="125" width="240" height="195" fill="%239cb7b4"/%3E%3Cpath d="M480 200h240v270H480z" fill="%23bc6f4f"/%3E%3Ccircle cx="650" cy="310" r="70" fill="%23d49d62"/%3E%3C/svg%3E';
@@ -17,48 +15,44 @@ const conceptCards = [
 
 type JourneyStage = 'intake' | 'generating' | 'ideas' | 'refinement' | 'scope' | 'estimates' | 'handoff';
 type DemoConcept = (typeof conceptCards)[number];
-type ScopeDisplay = {
-  id: string;
-  label: string;
-  quantity: number;
-  unit: string;
-  estimateUnit: ScopeUnit;
-  category: ScopeCategory;
-  source: string;
-  quantitySource: ConfirmedScopeItem['quantitySource'];
-  note?: string;
-  warning?: boolean;
+type ScopeDisplay = { id: string; label: string; quantity: number; unit: string; source: string; note?: string; warning?: boolean };
+type VoiceRecognition = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
+  onerror: () => void;
+  onend: () => void;
+  start: () => void;
+};
+type VoiceRecognitionConstructor = new () => VoiceRecognition;
+type DemoApiState = {
+  project: { id: string; revision: number };
+  versions: Array<{ id: string; state: string }>;
+  productResearch: {
+    results: Array<{
+      need: { id: string };
+      offers: unknown[];
+      paths: Array<{ kind: string; status: string; offerId: string | null }>;
+    }>;
+  } | null;
 };
 const scopeDisplay: ScopeDisplay[] = [
-  { id: 'scope-paint', label: 'Pintura de paredes', quantity: 50.4, unit: 'm²', estimateUnit: 'm2', category: 'wall_painting', source: 'calculado a partir da área informada', quantitySource: { type: 'calculated', formulaPtBr: 'Área informada × fator de superfície' } },
-  { id: 'scope-floor', label: 'Instalação de piso', quantity: 19.8, unit: 'm²', estimateUnit: 'm2', category: 'floor_installation', source: 'área + 10% de perda prevista', quantitySource: { type: 'calculated', formulaPtBr: 'Área informada + 10% de perda prevista' } },
-  { id: 'scope-light', label: 'Pontos de iluminação', quantity: 3, unit: 'pontos', estimateUnit: 'unit', category: 'lighting_point', source: 'informado por você', quantitySource: { type: 'informed', notePtBr: 'Quantidade informada no refinamento' } },
-  { id: 'scope-carpentry', label: 'Marcenaria sob medida', quantity: 1, unit: 'item', estimateUnit: 'unit', category: 'custom_cabinetry', source: 'assumido para a demonstração', quantitySource: { type: 'assumed', assumptionPtBr: 'Um item de marcenaria para a demonstração' }, warning: true, note: 'Requer medidas e proposta de fornecedor; fica fora da estimativa automática.' },
+  { id: 'scope-paint', label: 'Pintura de paredes', quantity: 50.4, unit: 'm²', source: 'calculado a partir da área informada' },
+  { id: 'scope-floor', label: 'Instalação de piso', quantity: 19.8, unit: 'm²', source: 'área + 10% de perda prevista' },
+  { id: 'scope-light', label: 'Pontos de iluminação', quantity: 3, unit: 'pontos', source: 'informado por você' },
+  { id: 'scope-carpentry', label: 'Marcenaria sob medida', quantity: 1, unit: 'item', source: 'assumido para a demonstração', warning: true, note: 'Requer medidas e proposta de fornecedor; fica fora da estimativa automática.' },
 ];
-const initialScope: ConfirmedScopeItem[] = scopeDisplay.map((row) => ({
-  id: row.id,
-  category: row.category,
-  labelPtBr: row.label,
-  quantity: row.quantity,
-  unit: row.estimateUnit,
-  quantitySource: row.quantitySource,
-  confirmed: true,
-  ...(row.note ? { notesPtBr: row.note } : {}),
-}));
+const initialScope: ConfirmedScopeItem[] = scopeDisplay.map((row) => ({ ...row, quantitySource: row.warning ? 'assumed' : row.id === 'scope-light' ? 'informed' : 'calculated' } as unknown as ConfirmedScopeItem));
+const economicRange: MoneyRange = { low: 12800, high: 16800 } as MoneyRange;
+const ecologicalRange: MoneyRange = { low: 14100, high: 18700 } as MoneyRange;
+const economicResult: EstimateResult = { profile: 'economic', expectedTotal: 14800, range: economicRange, lineItems: [] } as unknown as EstimateResult;
+const ecologicalResult: EstimateResult = { profile: 'ecological', expectedTotal: 16400, range: ecologicalRange, lineItems: [] } as unknown as EstimateResult;
+const demoEstimates: DualEstimateResponse = { datasetVersion: 'demonstração-2026.08', referencePeriod: 'referência ilustrativa', regionalReference: { uf: 'SP' }, economic: economicResult, ecological: ecologicalResult, comparisons: [], sharedAssumptions: ['Medições e estado do substrato ainda precisam ser confirmados em vistoria.'], exclusions: ['Estrutural, elétrica, hidráulica e marcenaria sob medida.'] } as unknown as DualEstimateResponse;
 const roomOptions: ReadonlyArray<{ value: RoomType; label: string }> = [{ value: 'living_room', label: 'Sala' }, { value: 'bedroom', label: 'Quarto' }, { value: 'kitchen', label: 'Cozinha' }, { value: 'bathroom', label: 'Banheiro' }, { value: 'office', label: 'Escritório' }, { value: 'other', label: 'Outro' }];
-const generationMessages = ['Preparando a foto…', 'Preservando a estrutura do ambiente…', 'Criando quatro caminhos visuais…', 'Finalizando materiais e luz…'];
+const generationMessages = ['Entendendo seu pedido multimodal…', 'Criando direções para o ambiente…', 'Pesquisando produtos e materiais…', 'Comparando opções para procurement…'];
 function formatMoney(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value); }
-function readScope(item: ConfirmedScopeItem): ScopeDisplay {
-  const known = scopeDisplay.find((row) => row.id === item.id);
-  if (known) return known;
-  const source = item.quantitySource.type === 'calculated'
-    ? item.quantitySource.formulaPtBr
-    : item.quantitySource.type === 'assumed'
-      ? item.quantitySource.assumptionPtBr
-      : item.quantitySource.notePtBr ?? 'informado por você';
-  const unit = item.unit === 'm2' ? 'm²' : item.unit === 'linear_m' ? 'm' : item.unit === 'service' ? 'serviço' : 'item';
-  return { id: item.id, label: item.labelPtBr, quantity: item.quantity, unit, estimateUnit: item.unit, category: item.category, source, quantitySource: item.quantitySource, note: item.notesPtBr, warning: item.quantitySource.type === 'assumed' };
-}
+function readScope(item: ConfirmedScopeItem): ScopeDisplay { const candidate = item as unknown as ScopeDisplay; return scopeDisplay.find((row) => row.id === candidate.id) ?? candidate; }
 
 export default function HomePage() {
   const [stage, setStage] = useState<JourneyStage>('intake');
@@ -71,6 +65,8 @@ export default function HomePage() {
   const [request, setRequest] = useState('Trocar o piso e deixar a sala mais aconchegante, com luz natural.');
   const [nudgeVisible, setNudgeVisible] = useState(true);
   const [formError, setFormError] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [agentSummary, setAgentSummary] = useState('');
   const [progressStep, setProgressStep] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState('concept-a');
   const [refinement, setRefinement] = useState('');
@@ -92,88 +88,135 @@ export default function HomePage() {
   const selectedConcept = useMemo(() => conceptCards.find((concept) => concept.id === selectedVariantId) ?? conceptCards[0], [selectedVariantId]);
   const visibleScopeItems = scopeItems.filter((item) => !removedScopeIds.includes(readScope(item).id));
   const areaValue = Number(area) || 0;
-  const finishTierValue: FinishTier = finishTier === 'econômico' ? 'economy' : finishTier === 'premium' ? 'premium' : 'standard';
-  const scope: ConfirmedScopeItem[] = visibleScopeItems.map((item) => ({ ...item, quantity: scopeQuantities[item.id] ?? item.quantity }));
-  if (questionFloor === 'remover' && scope.some((item) => item.id === 'scope-floor')) {
-    scope.push({
-      id: 'scope-floor-removal',
-      category: 'floor_removal',
-      labelPtBr: 'Remoção do piso atual',
-      quantity: scopeQuantities['scope-floor'] ?? 19.8,
-      unit: 'm2',
-      quantitySource: { type: 'calculated', formulaPtBr: 'Mesma área confirmada para instalação do novo piso' },
-      confirmed: true,
-    });
-  }
-  if (questionCeiling === 'sim' && areaValue > 0) {
-    scope.push({
-      id: 'scope-ceiling',
-      category: 'ceiling_painting',
-      labelPtBr: 'Pintura do teto',
-      quantity: areaValue,
-      unit: 'm2',
-      quantitySource: { type: 'calculated', formulaPtBr: 'Área aproximada informada para o ambiente' },
-      confirmed: true,
-    });
-  }
-  const estimates = calculateDualEstimate({ uf, finishTier: finishTierValue, scope });
-  const economicRange = estimates.economic.range;
-  const ecologicalRange = estimates.ecological.range;
-  const economicResult = estimates.economic;
-  const ecologicalResult = estimates.ecological;
-  const demoEstimates = estimates;
-  const demoProject: Project = { id: DEMO_PROJECT_ID, city, uf, roomType, areaM2: areaValue, finishTier: finishTierValue, originalInstruction: request, status: 'REVIEWING_OPTIONS', generationCount: 1, confirmedScope: scope };
+  const demoProject = { id: DEMO_PROJECT_ID, city, uf, roomType, areaM2: areaValue, originalInstruction: request, status: 'reviewing_options' } as unknown as Project;
+  const generationVariants = conceptCards.map((concept, index) => ({ id: concept.id, ordinal: index + 1, imageUrl: concept.image, label: concept.letter })) as unknown as GeneratedVariant[];
+  const demoGeneration = { id: 'generation-demo-001', projectId: demoProject.id, kind: 'initial', status: 'completed', variants: generationVariants } as unknown as Generation;
   function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; if (!file.type.startsWith('image/')) { setFormError('Escolha uma imagem JPG, PNG ou WebP para continuar.'); return; } if (file.size > 5 * 1024 * 1024) { setFormError('A imagem precisa ter até 5 MB.'); return; } setFormError(''); setSourceImage(URL.createObjectURL(file)); }
-  function appendChip(text: string) { setRequest((current) => (current ? `${current} ${text}.` : text)); setNudgeVisible(false); }
-  function handleGenerate() { if (!sourceImage || !city.trim() || !uf.trim() || !roomType || areaValue <= 0 || request.trim().length < 10) { setFormError('Preencha a cidade, o ambiente, uma área válida e descreva a mudança em pelo menos 10 caracteres.'); return; } setFormError(''); setProgressStep(0); setStage('generating'); generationTimer.current = setTimeout(() => { setProgressStep(generationMessages.length - 1); setStage('ideas'); }, 2200); }
-  function handleRefine() { if (refinement.trim().length < 4) return; setRefinementStatus('working'); refinementTimer.current = setTimeout(() => setRefinementStatus('done'), 1500); }
-  function updateQuantity(id: string, value: string) { const numeric = Number(value); setScopeQuantities((current) => ({ ...current, [id]: Number.isFinite(numeric) ? numeric : 0 })); }
-  function handleLightingChange(value: string) { setQuestionLighting(value); updateQuantity('scope-light', value); }
-  function selectEstimate(preference: 'economic' | 'ecological' | 'both') {
-    if (scope.some((item) => item.quantity <= 0)) {
-      setFormError('Informe uma quantidade maior que zero para cada item mantido no escopo.');
+  function handleVoiceInput() {
+    const speechWindow = window as unknown as {
+      SpeechRecognition?: VoiceRecognitionConstructor;
+      webkitSpeechRecognition?: VoiceRecognitionConstructor;
+    };
+    const Recognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      setFormError('A entrada por voz não está disponível neste navegador. Use texto ou imagem.');
       return;
     }
-    setFormError('');
-    setEstimatePreference(preference);
-    const post: MarketplaceProjectPost = {
-      id: 'post-demo-001',
-      projectId: demoProject.id,
-      title: `${roomOptions.find((option) => option.value === String(roomType))?.label ?? 'Ambiente'} com novo respiro`,
-      city,
-      uf: uf.toUpperCase(),
-      roomType,
-      areaM2: areaValue,
-      coverVariantId: selectedVariantId,
-      includeOriginalImage,
-      confirmedScope: scope,
-      estimatePreference: preference,
-      economicRange,
-      ecologicalRange,
-      sustainabilityPreferences: ['Preservar o que já existe quando for viável'],
-      desiredStart: 'researching',
-      datesFlexible: true,
-      allowEquivalentAlternatives: true,
-      note: 'Pedido criado a partir de uma experiência demonstrativa.',
-      status: 'draft',
+    const recognition = new Recognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1]?.[0]?.transcript;
+      if (transcript) setRequest(transcript);
+      setNudgeVisible(false);
     };
-    setMarketplacePost(post);
-    setStage('handoff');
+    recognition.onerror = () => {
+      setFormError('Não consegui ouvir com clareza. Tente novamente ou escreva o pedido.');
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+    setFormError('');
+    setIsListening(true);
+    recognition.start();
   }
-  function savePostForHandoff() { if (!marketplacePost || typeof window === 'undefined') return; window.localStorage.setItem(MARKETPLACE_POST_STORAGE_KEY, JSON.stringify(marketplacePost)); }
+  function appendChip(text: string) { setRequest((current) => (current ? `${current} ${text}.` : text)); setNudgeVisible(false); }
+  async function handleGenerate() {
+    if (!sourceImage || !city.trim() || !uf.trim() || !roomType || areaValue <= 0 || request.trim().length < 10) {
+      setFormError('Preencha a cidade, o ambiente, uma área válida e descreva a mudança em pelo menos 10 caracteres.');
+      return;
+    }
+    async function api<T>(path: string, init?: RequestInit): Promise<T> {
+      const response = await fetch(path, {
+        ...init,
+        headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
+      });
+      if (!response.ok) throw new Error(`Falha ${response.status} em ${path}`);
+      return response.json() as Promise<T>;
+    }
+    setFormError('');
+    setAgentSummary('');
+    setProgressStep(0);
+    setStage('generating');
+    try {
+      const reset = await api<DemoApiState>('/api/demo', { method: 'POST' });
+      const ready = reset.versions.find((version) => version.state === 'READY');
+      if (!ready) throw new Error('Nenhuma versão pronta');
+      await api(`/api/projects/${reset.project.id}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ versionId: ready.id, expectedRevision: reset.project.revision }),
+      });
+      setProgressStep(1);
+      const approved = await api<DemoApiState>('/api/demo');
+      await api(`/api/projects/${approved.project.id}/product-research`, {
+        method: 'POST',
+        body: JSON.stringify({ expectedRevision: approved.project.revision }),
+      });
+      setProgressStep(2);
+      const researched = await api<DemoApiState>('/api/demo');
+      if (!researched.productResearch) throw new Error('Pesquisa sem resultado');
+      const selections = researched.productResearch.results.map((result) => {
+        const path = result.paths.find((candidate) => candidate.kind === 'LOWEST_UPFRONT' && candidate.offerId);
+        if (!path) throw new Error(`Sem produto selecionável para ${result.need.id}`);
+        return { needId: result.need.id, path: path.kind };
+      });
+      await api(`/api/projects/${researched.project.id}/product-research`, {
+        method: 'PATCH',
+        body: JSON.stringify({ expectedRevision: researched.project.revision, selections }),
+      });
+      const selected = await api<DemoApiState>('/api/demo');
+      await api(`/api/projects/${selected.project.id}/publish`, { method: 'POST' });
+      const offerCount = researched.productResearch.results.reduce((total, result) => total + result.offers.length, 0);
+      setAgentSummary(`${selections.length} produtos selecionados entre ${offerCount} ofertas · sourcing pronto para fornecedores`);
+      setProgressStep(generationMessages.length - 1);
+      setStage('ideas');
+    } catch {
+      setFormError('Não consegui concluir a orquestração agora. Tente novamente.');
+      setStage('intake');
+    }
+  }
+  function handleRefine() { if (refinement.trim().length < 4) return; setRefinementStatus('working'); refinementTimer.current = setTimeout(() => setRefinementStatus('done'), 1500); }
+  function approveRefinement() { setScopeItems(initialScope); setRemovedScopeIds([]); setStage('scope'); }
+  function updateQuantity(id: string, value: string) { const numeric = Number(value); setScopeQuantities((current) => ({ ...current, [id]: Number.isFinite(numeric) ? numeric : 0 })); }
+  function selectEstimate(preference: 'economic' | 'ecological' | 'both') { setEstimatePreference(preference); const post = { id: 'post-demo-001', projectId: demoProject.id, title: `${roomOptions.find((option) => option.value === String(roomType))?.label ?? 'Ambiente'} com novo respiro`, city, uf: uf.toUpperCase(), roomType, areaM2: areaValue, coverVariantId: selectedVariantId, includeOriginalImage, confirmedScope: visibleScopeItems, estimatePreference: preference, economicRange, ecologicalRange, sustainabilityPreferences: ['Preservar o que já existe quando for viável'], desiredStart: 'researching', datesFlexible: true, allowEquivalentAlternatives: true, note: 'Pedido criado a partir de uma experiência demonstrativa.', status: 'draft' } as unknown as MarketplaceProjectPost; setMarketplacePost(post); setStage('handoff'); }
+  function savePostForHandoff() { if (!marketplacePost || typeof window === 'undefined') return; window.localStorage.setItem('obria-demo-marketplace-post', JSON.stringify(marketplacePost)); }
   const currentStep = stage === 'intake' || stage === 'generating' ? 0 : stage === 'ideas' || stage === 'refinement' ? 1 : stage === 'scope' ? 2 : stage === 'estimates' ? 3 : 4;
-  const stageLabel = stage === 'intake' ? 'Seu espaço' : stage === 'generating' ? 'Preparando ideias' : stage === 'ideas' || stage === 'refinement' ? 'Ideias' : stage === 'scope' ? 'Escopo' : stage === 'estimates' ? 'Estimativas' : 'Profissionais';
+  const stageLabel = stage === 'intake' ? 'Seu pedido' : stage === 'generating' ? 'Agentes trabalhando' : stage === 'ideas' || stage === 'refinement' ? 'Ideação' : stage === 'scope' ? 'Escopo' : stage === 'estimates' ? 'Procurement' : 'Sourcing concluído';
   return <main className="app-shell">
-    <header className="topbar"><Link className="brand" href="/" aria-label="Obra Clara, início"><span className="brand-mark" aria-hidden="true">OC</span><span><strong>Obra Clara</strong><small>do desejo ao próximo passo</small></span></Link><div className="demo-badge"><span className="status-dot" aria-hidden="true" />Demonstração local</div></header>
-    <section className="stage-rail" aria-label="Etapas do projeto"><div className="stage-intro"><span className="eyebrow">PROJETO SEM PRESSA</span><span className="stage-current">{stageLabel}</span></div><ol className="stepper">{['Seu espaço', 'Ideias', 'Escopo', 'Estimativas', 'Profissionais'].map((label, index) => <li key={label} className={index === currentStep ? 'is-current' : index < currentStep ? 'is-done' : ''}><span className="step-number" aria-hidden="true">{index < currentStep ? '✓' : index + 1}</span><span>{label}</span></li>)}</ol></section>
-    <div className="workspace"><div className="content-column"><div className="demo-note" role="note"><span aria-hidden="true">i</span><p>Você está vendo uma demonstração com dados fictícios. Nenhum provedor de imagem ou profissional foi chamado.</p></div>
-      {stage === 'intake' && <section className="journey-panel reveal" aria-labelledby="intake-title"><PanelHeading eyebrow="01 / SEU ESPAÇO" title="Vamos começar pelo ambiente que você imagina." description="Uma foto e algumas decisões simples bastam para abrir caminhos visuais — sem prometer uma medição técnica." stamp="1 de 5" /><div className="intake-grid"><div className="photo-column"><div className="photo-frame"><img src={sourceImage} alt="Prévia do ambiente selecionado para a demonstração" /><span className="photo-label">Imagem de demonstração</span></div><label className="upload-button" htmlFor="room-photo">Trocar foto do ambiente<input id="room-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} /></label><small className="field-help">JPG, PNG ou WebP · até 5 MB · a imagem fica apenas nesta sessão.</small></div><div className="form-column"><div className="field-row two-up"><label><span>Cidade</span><input value={city} onChange={(event) => setCity(event.target.value)} placeholder="Ex.: São Paulo" /></label><label><span>UF</span><input value={uf} maxLength={2} onChange={(event) => setUf(event.target.value.toUpperCase())} placeholder="SP" /></label></div><div className="field-row two-up"><label><span>Tipo de ambiente</span><select value={String(roomType)} onChange={(event) => setRoomType(event.target.value as RoomType)}>{roomOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label><label><span>Área aproximada</span><span className="input-suffix"><input type="number" min="1" value={area} onChange={(event) => setArea(event.target.value)} /><em>m²</em></span></label></div><fieldset className="field-group"><legend>Nível de acabamento</legend><div className="option-row">{[['econômico', 'Essencial'], ['padrão', 'Equilibrado'], ['premium', 'Mais detalhes']].map(([value, label]) => <button type="button" key={value} className={`choice-pill ${finishTier === value ? 'is-selected' : ''}`} aria-pressed={finishTier === value} onClick={() => setFinishTier(value)}>{label}</button>)}</div></fieldset><label className="field-group"><span>O que você quer mudar?</span><textarea value={request} maxLength={800} minLength={10} onChange={(event) => setRequest(event.target.value)} rows={4} /><small>{request.length}/800 · Descreva só o que importa agora.</small></label><div className="prompt-chips" aria-label="Atalhos de pedido">{['Trocar piso', 'Pintar paredes', 'Melhorar iluminação', 'Mais aconchegante', 'Estilo contemporâneo', 'Preservar o que já existe'].map((chip) => <button type="button" key={chip} onClick={() => appendChip(chip)}>+ {chip}</button>)}</div></div></div>{nudgeVisible && <aside className="nudge-card"><span className="nudge-icon" aria-hidden="true">↺</span><div><strong>Quer reduzir desperdício?</strong><p>Considere preservar ou renovar elementos existentes antes de substituir tudo.</p></div><button type="button" onClick={() => appendChip('Quero preservar o que já existe quando for viável')}>Adicionar ao pedido</button><button type="button" className="text-button" onClick={() => setNudgeVisible(false)}>Agora não</button></aside>}{formError && <div className="alert alert-error" role="alert"><strong>Antes de criar as propostas:</strong> {formError}</div>}<div className="panel-actions"><span className="action-note">Leva menos de um minuto · você decide o caminho.</span><button className="primary-button" type="button" onClick={handleGenerate}>Criar 4 propostas <span aria-hidden="true">→</span></button></div></section>}
+    <header className="topbar"><Link className="brand" href="/" aria-label="ObrIA, início"><span className="brand-mark" aria-hidden="true"><svg viewBox="0 0 64 64"><path fill="currentColor" fillRule="evenodd" d="M8 8V56H56L8 8ZM20 30L34 44H20V30Z" /><path className="brand-mark-accent" d="M8 8h8v48H8z" /></svg></span><span><strong>ObrIA</strong><small>uma prancheta de obra no bolso</small></span></Link><div className="demo-badge"><span className="status-dot" aria-hidden="true" />Demonstração agêntica</div></header>
+    <section className="stage-rail" aria-label="Etapas do projeto"><div className="stage-intro"><span className="eyebrow">EXPERIÊNCIA AGÊNTICA</span><span className="stage-current">{stageLabel}</span></div><ol className="stepper">{['Pedido', 'Ideação', 'Escopo', 'Procurement', 'Sourcing'].map((label, index) => <li key={label} className={index === currentStep ? 'is-current' : index < currentStep ? 'is-done' : ''}><span className="step-number" aria-hidden="true">{index < currentStep ? '✓' : index + 1}</span><span>{label}</span></li>)}</ol></section>
+    <div className="workspace"><div className="content-column"><div className="demo-note" role="note"><span aria-hidden="true">i</span><p>Uma única intenção coordena ideação do ambiente, pesquisa de produtos, procurement e sourcing.</p></div>
+      {stage === 'intake' && <section className="journey-panel agentic-intake reveal" aria-labelledby="agentic-title">
+        <div className="agentic-hero">
+          <span className="eyebrow">UM INPUT. VÁRIOS AGENTES.</span>
+          <h1 id="agentic-title">Mostre ou conte o ambiente. O agente cuida do resto.</h1>
+          <p className="lede">Envie texto, voz ou imagem. A ObrIA transforma sua intenção em direções visuais, escopo, produtos cotados e fornecedores.</p>
+        </div>
+        <div className="agentic-composer">
+          <textarea value={request} onChange={(event) => setRequest(event.target.value)} rows={4} aria-label="Descreva o ambiente e o que deseja mudar" placeholder="Ex.: Quero deixar esta sala mais acolhedora, com luz quente, tapete lavável e uma mesa lateral…" />
+          <div className="agentic-inputs" aria-label="Formas de enviar seu pedido">
+            <label className="agentic-channel" htmlFor="agentic-photo"><span aria-hidden="true">＋</span> Imagem<input id="agentic-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} /></label>
+            <button type="button" className={`agentic-channel ${isListening ? 'is-active' : ''}`} onClick={handleVoiceInput}><span aria-hidden="true">◉</span> {isListening ? 'Ouvindo…' : 'Voz'}</button>
+            <span className="agentic-channel is-selected"><span aria-hidden="true">Aa</span> Texto</span>
+          </div>
+          <div className="agentic-context">
+            <img src={sourceImage} alt="Referência visual do ambiente" />
+            <div><strong>{roomOptions.find((option) => option.value === String(roomType))?.label} em {city}</strong><small>Imagem opcional · contexto ajustável depois</small></div>
+          </div>
+          {formError && <p className="field-error" role="alert">{formError}</p>}
+          <button type="button" className="primary-button agentic-submit" onClick={handleGenerate}>Iniciar agentes <span aria-hidden="true">→</span></button>
+        </div>
+        <div className="agentic-flow" aria-label="Trabalho coordenado pelos agentes">
+          <span><b>01</b> Ideação visual</span><span><b>02</b> Escopo</span><span><b>03</b> Procurement</span><span><b>04</b> Sourcing</span>
+        </div>
+      </section>}
       {stage === 'generating' && <section className="journey-panel reveal" aria-labelledby="generation-title" aria-busy="true"><PanelHeading eyebrow="02 / IDEIAS" title="Abrindo quatro possibilidades para este espaço." description="Esta é uma passagem demonstrativa local. Não há porcentagem inventada nem chamada de provedor." /><div className="generation-layout"><div className="source-preview"><img src={sourceImage} alt="Foto original do ambiente" /><span>Foto de referência</span></div><div className="generation-status"><div className="status-orbit" aria-hidden="true"><span /></div><p className="live-copy" aria-live="polite">{generationMessages[progressStep]}</p><ol className="generation-list">{generationMessages.map((message, index) => <li key={message} className={index <= progressStep ? 'is-active' : ''}><span aria-hidden="true">{index < progressStep ? '✓' : index === progressStep ? '·' : '○'}</span>{message}</li>)}</ol><p className="quiet-note">As propostas preservam a perspectiva e os elementos permanentes da foto. São referências visuais, não avaliação estrutural.</p></div></div><div className="skeleton-gallery" aria-label="Quatro propostas sendo preparadas">{conceptCards.map((concept) => <div className="concept-skeleton" key={concept.id}><div /><span>{concept.letter}</span></div>)}</div></section>}
+      {stage === 'ideas' && agentSummary && <div className="agent-output-banner" role="status" aria-live="polite"><span aria-hidden="true">✓</span><strong>Procurement concluído</strong><p>{agentSummary}</p></div>}
       {stage === 'ideas' && <section className="journey-panel reveal" aria-labelledby="ideas-title"><PanelHeading eyebrow="02 / IDEIAS" title="Qual destes caminhos parece mais seu?" description="Quatro referências visuais para conversar sobre intenção. Nenhuma delas é orçamento ou promessa técnica." stamp="4 propostas" /><div className="concept-grid">{conceptCards.map((concept) => <article className={`concept-card ${selectedVariantId === concept.id ? 'is-selected' : ''}`} key={concept.id}><button type="button" className="concept-select" aria-pressed={selectedVariantId === concept.id} onClick={() => setSelectedVariantId(concept.id)}><div className="concept-image-wrap"><img src={concept.image} alt={`Proposta ${concept.letter}: ${concept.title}, referência visual demonstrativa`} /><span className="concept-letter">{concept.letter}</span><span className="concept-demo">Demonstração</span></div><div className="concept-copy"><div><h2>{concept.title}</h2><p>{concept.descriptor}</p></div><span className="selection-mark" aria-hidden="true">{selectedVariantId === concept.id ? '✓' : ''}</span></div></button><button type="button" className="enlarge-button" onClick={() => setLargeImage(concept)}>Ampliar imagem</button></article>)}</div><div className="compare-strip"><div><strong>Antes e depois, sem truque.</strong><span>Você escolheu {selectedConcept.title}. Compare a referência original antes de ajustar.</span></div><div className="compare-pair"><img src={sourceImage} alt="Ambiente original" /><span aria-hidden="true">→</span><img src={selectedConcept.image} alt={`Referência selecionada ${selectedConcept.letter}`} /></div></div><div className="panel-actions sticky-action"><span className="action-note">Selecionada: proposta {selectedConcept.letter} · você pode mudar.</span><button className="primary-button" type="button" onClick={() => setStage('refinement')}>Continuar com esta proposta <span aria-hidden="true">→</span></button></div>{largeImage && <dialog className="image-dialog" open aria-labelledby="dialog-title"><button type="button" className="dialog-close" onClick={() => setLargeImage(null)} aria-label="Fechar imagem ampliada">×</button><img src={largeImage.image} alt={`Proposta ${largeImage.letter}: ${largeImage.title}`} /><div><span className="eyebrow">PROPOSTA {largeImage.letter}</span><h2 id="dialog-title">{largeImage.title}</h2><p>{largeImage.descriptor}</p></div></dialog>}</section>}
       {stage === 'refinement' && <section className="journey-panel reveal" aria-labelledby="refinement-title"><PanelHeading eyebrow="03 / AJUSTES" title="A imagem ajuda a conversar. O ajuste deixa a conversa mais precisa." description={`Peça uma única mudança focada. Usaremos a proposta ${selectedConcept.letter} como ponto de partida nesta demonstração.`} /><div className="selected-mini"><img src={selectedConcept.image} alt="Proposta escolhida" /><span>Proposta {selectedConcept.letter}</span></div>{refinementStatus === 'working' ? <div className="refinement-progress" role="status" aria-live="polite"><div className="status-orbit" aria-hidden="true"><span /></div><strong>Aplicando seu ajuste à referência…</strong><p>Demonstração local · preservando o restante da cena.</p></div> : refinementStatus === 'done' ? <div className="refinement-done" role="status"><div className="done-image"><img src={selectedConcept.image} alt={`Proposta ${selectedConcept.letter} com ajuste demonstrativo`} /><span>Ajuste aplicado · demonstração</span></div><div><span className="eyebrow">REVISÃO</span><h2>O pedido ficou mais focado.</h2><p>“{refinement}” foi aplicado como uma indicação visual. Confirme para transformar a intenção em escopo editável.</p><button className="primary-button" type="button" onClick={() => { setScopeItems(initialScope); setStage('scope'); }}>Aprovar e definir escopo <span aria-hidden="true">→</span></button></div></div> : <div className="refinement-composer"><label className="field-group"><span>O que você quer ajustar nesta versão?</span><textarea value={refinement} onChange={(event) => setRefinement(event.target.value)} rows={4} placeholder="Ex.: mais luz natural, sem mudar o piso…" /><small>Uma mudança por vez deixa o resultado mais claro.</small></label><div className="prompt-chips">{['Mais luz natural', 'Menos mudanças', 'Preserve o piso atual', 'Troque só a cor das paredes', 'Materiais de aparência natural'].map((chip) => <button type="button" key={chip} onClick={() => setRefinement(chip)}>{chip}</button>)}</div><div className="panel-actions"><span className="action-note">Você ainda pode aprovar sem ajustar.</span><div className="button-group"><button className="secondary-button" type="button" onClick={() => { setScopeItems(initialScope); setStage('scope'); }}>Aprovar e calcular estimativas</button><button className="primary-button" type="button" disabled={refinement.trim().length < 4} onClick={handleRefine}>Gerar novo ajuste <span aria-hidden="true">→</span></button></div></div></div>}</section>}
-      {stage === 'scope' && <section className="journey-panel reveal" aria-labelledby="scope-title"><PanelHeading eyebrow="04 / ESCOPO" title="Vamos confirmar o que entra antes de falar em dinheiro." description="A imagem sugere. Você confirma. Os valores abaixo são editáveis e deixam claro de onde cada quantidade veio." stamp="até 3 perguntas" /><div className="question-block"><div className="section-kicker"><span>PERGUNTAS OBJETIVAS</span><small>Isso altera a estimativa</small></div><div className="question-grid"><label><span>Quantos pontos de iluminação deseja alterar?</span><select value={questionLighting} onChange={(event) => handleLightingChange(event.target.value)} ><option value="1">1 ponto</option><option value="2">2 pontos</option><option value="3">3 pontos</option><option value="4">4 pontos</option></select></label><label><span>O piso será removido ou instalado sobre o atual?</span><select value={questionFloor} onChange={(event) => setQuestionFloor(event.target.value)}><option value="sobre">Instalar sobre o atual, se viável</option><option value="remover">Remover o piso atual</option><option value="decidir">Decidir na vistoria</option></select></label><fieldset><legend>Deseja pintar também o teto?</legend><div className="radio-row"><label><input type="radio" name="ceiling" checked={questionCeiling === 'sim'} onChange={() => setQuestionCeiling('sim')} /> Sim</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'nao'} onChange={() => setQuestionCeiling('nao')} /> Não</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'decidir'} onChange={() => setQuestionCeiling('decidir')} /> Decidir depois</label></div></fieldset></div></div>{visibleScopeItems.length === 0 ? <div className="empty-state" role="status"><h2>Seu escopo está vazio.</h2><p>Recoloque os itens demonstrativos para continuar.</p><button className="secondary-button" type="button" onClick={() => { setScopeItems(initialScope); setRemovedScopeIds([]); }}>Recolocar itens</button></div> : <div className="scope-list"><div className="section-kicker"><span>ITENS CONFIRMÁVEIS</span><small>{visibleScopeItems.length} itens nesta demonstração</small></div>{visibleScopeItems.map((item) => { const row = readScope(item); return <article className={`scope-row ${row.warning ? 'has-warning' : ''}`} key={row.id}><span className="scope-check" aria-hidden="true">✓</span><div className="scope-main"><div className="scope-row-heading"><h2>{row.label}</h2>{row.warning && <span className="warning-badge">revisão profissional</span>}</div><p>{row.source}</p>{row.note && <small>{row.note}</small>}</div><label className="quantity-field"><span>Quantidade</span><span className="input-suffix"><input type="number" min="0" step="0.1" value={scopeQuantities[row.id] ?? row.quantity} onChange={(event) => updateQuantity(row.id, event.target.value)} /><em>{row.unit}</em></span></label><button type="button" className="icon-button" onClick={() => setRemovedScopeIds((current) => [...current, row.id])} aria-label={`Remover ${row.label}`}>×</button></article>; })}</div>}<div className="scope-footer"><p><strong>O que não está aqui:</strong> estrutura, elétrica, hidráulica e medidas finais. Serão pontos de vistoria.</p><button className="primary-button" type="button" disabled={visibleScopeItems.length === 0} onClick={() => setStage('estimates')}>Comparar estimativas <span aria-hidden="true">→</span></button></div></section>}
+      {stage === 'scope' && <section className="journey-panel reveal" aria-labelledby="scope-title"><PanelHeading eyebrow="04 / ESCOPO" title="Vamos confirmar o que entra antes de falar em dinheiro." description="A imagem sugere. Você confirma. Os valores abaixo são editáveis e deixam claro de onde cada quantidade veio." stamp="até 3 perguntas" /><div className="question-block"><div className="section-kicker"><span>PERGUNTAS OBJETIVAS</span><small>Isso altera a estimativa</small></div><div className="question-grid"><label><span>Quantos pontos de iluminação deseja alterar?</span><select value={questionLighting} onChange={(event) => setQuestionLighting(event.target.value)}><option value="1">1 ponto</option><option value="2">2 pontos</option><option value="3">3 pontos</option><option value="4">4 pontos</option></select></label><label><span>O piso será removido ou instalado sobre o atual?</span><select value={questionFloor} onChange={(event) => setQuestionFloor(event.target.value)}><option value="sobre">Instalar sobre o atual, se viável</option><option value="remover">Remover o piso atual</option><option value="decidir">Decidir na vistoria</option></select></label><fieldset><legend>Deseja pintar também o teto?</legend><div className="radio-row"><label><input type="radio" name="ceiling" checked={questionCeiling === 'sim'} onChange={() => setQuestionCeiling('sim')} /> Sim</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'nao'} onChange={() => setQuestionCeiling('nao')} /> Não</label><label><input type="radio" name="ceiling" checked={questionCeiling === 'decidir'} onChange={() => setQuestionCeiling('decidir')} /> Decidir depois</label></div></fieldset></div></div>{visibleScopeItems.length === 0 ? <div className="empty-state" role="status"><h2>Seu escopo está vazio.</h2><p>Recoloque os itens demonstrativos para continuar.</p><button className="secondary-button" type="button" onClick={() => { setScopeItems(initialScope); setRemovedScopeIds([]); }}>Recolocar itens</button></div> : <div className="scope-list"><div className="section-kicker"><span>ITENS CONFIRMÁVEIS</span><small>{visibleScopeItems.length} itens nesta demonstração</small></div>{visibleScopeItems.map((item) => { const row = readScope(item); return <article className={`scope-row ${row.warning ? 'has-warning' : ''}`} key={row.id}><span className="scope-check" aria-hidden="true">✓</span><div className="scope-main"><div className="scope-row-heading"><h2>{row.label}</h2>{row.warning && <span className="warning-badge">revisão profissional</span>}</div><p>{row.source}</p>{row.note && <small>{row.note}</small>}</div><label className="quantity-field"><span>Quantidade</span><span className="input-suffix"><input type="number" min="0" step="0.1" value={scopeQuantities[row.id] ?? row.quantity} onChange={(event) => updateQuantity(row.id, event.target.value)} /><em>{row.unit}</em></span></label><button type="button" className="icon-button" onClick={() => setRemovedScopeIds((current) => [...current, row.id])} aria-label={`Remover ${row.label}`}>×</button></article>; })}</div>}<div className="scope-footer"><p><strong>O que não está aqui:</strong> estrutura, elétrica, hidráulica e medidas finais. Serão pontos de vistoria.</p><button className="primary-button" type="button" disabled={visibleScopeItems.length === 0} onClick={() => setStage('estimates')}>Comparar estimativas <span aria-hidden="true">→</span></button></div></section>}
       {stage === 'estimates' && <section className="journey-panel reveal" aria-labelledby="estimates-title"><PanelHeading eyebrow="05 / ESTIMATIVAS" title="Duas formas de realizar seu projeto." description="A mesma intenção e o mesmo escopo, com escolhas diferentes. Compare sem transformar preferência em julgamento." /><div className="alert alert-disclaimer" role="note"><strong>Estimativa preliminar para planejamento.</strong><span>Não substitui medição, vistoria técnica ou orçamento executivo de um profissional.</span></div><div className="estimate-grid"><EstimateCard title="Mais econômica" eyebrow="MENOR INVESTIMENTO INICIAL" tone="economic" range={economicRange} expected={economicResult} selected={estimatePreference === 'economic'} onSelect={() => selectEstimate('economic')} /><EstimateCard title="Mais ecológica" eyebrow="ALTERNATIVAS COM MENOR DESPERDÍCIO" tone="ecological" range={ecologicalRange} expected={ecologicalResult} selected={estimatePreference === 'ecological'} onSelect={() => selectEstimate('ecological')} /></div><div className="comparison-section"><div className="section-kicker"><span>O QUE MUDA ENTRE OS CAMINHOS</span><small>Impactos descritos de forma qualitativa</small></div><ComparisonItem title="Restaurar o piso existente em vez de remover" summary="Pode evitar descarte e compra de material novo. A viabilidade depende do estado atual." delta="+R$ 900–1.900" expanded={expandedEcoItem === 'floor'} onToggle={() => setExpandedEcoItem(expandedEcoItem === 'floor' ? null : 'floor')} details={<><p><strong>O que muda:</strong> acabamento e preparação do piso atual, em vez de remoção imediata.</p><p><strong>Por que pode ajudar:</strong> menos resíduos e menos material novo, quando o substrato permite.</p><p><strong>O que confirmar:</strong> estado do piso, umidade, nivelamento e garantia do fornecedor.</p><p><strong>Nota:</strong> impacto potencial qualitativo: menos resíduos; não é um cálculo de carbono.</p></>} /><ComparisonItem title="Tinta de baixa emissão e madeira certificada pelo fornecedor" summary="Alternativas para reduzir odores e orientar escolhas de origem verificável." delta="+R$ 400–1.000" expanded={expandedEcoItem === 'materials'} onToggle={() => setExpandedEcoItem(expandedEcoItem === 'materials' ? null : 'materials')} details={<><p><strong>O que muda:</strong> especificação de materiais alternativos com verificação na compra.</p><p><strong>Por que pode ajudar:</strong> menos odor durante a aplicação e origem mais rastreável, se confirmada.</p><p><strong>O que confirmar:</strong> ficha técnica, disponibilidade regional e correta instalação.</p><p><strong>Nota:</strong> benefício depende de fornecedor e instalação; não há selo atribuído automaticamente.</p></>} /></div><div className="preference-block"><div><strong>Qual conversa você quer levar para profissionais?</strong><p>A terceira opção deixa as duas possibilidades abertas para comparação em uma visita.</p></div><div className="preference-actions"><button type="button" className="preference-button" onClick={() => selectEstimate('economic')}><span className="radio-dot" aria-hidden="true" />Prefiro economia</button><button type="button" className="preference-button eco" onClick={() => selectEstimate('ecological')}><span className="radio-dot" aria-hidden="true" />Prefiro escolhas ecológicas</button><button type="button" className="preference-button both" onClick={() => selectEstimate('both')}><span className="radio-dot" aria-hidden="true" />Quero receber propostas para as duas</button></div></div><label className="check-line"><input type="checkbox" checked={includeOriginalImage} onChange={(event) => setIncludeOriginalImage(event.target.checked)} /><span>Incluir a foto original no pedido para profissionais verem o antes.</span></label><p className="dataset-note">Valores ilustrativos usando catálogo local de demonstração ({demoEstimates.datasetVersion}). Não são cotação vinculante.</p></section>}
-      {stage === 'handoff' && marketplacePost && <section className="journey-panel reveal" aria-labelledby="handoff-title"><div className="success-banner"><span aria-hidden="true">✓</span><div><span className="eyebrow">PRÓXIMO PASSO</span><h1 id="handoff-title">Seu projeto já pode virar um pedido claro.</h1><p>O resumo abaixo será reaproveitado no protótipo do marketplace. Você não precisa preencher tudo de novo.</p></div></div><div className="post-preview"><div className="post-cover"><img src={selectedConcept.image} alt="Capa da proposta escolhida" /><span>Proposta {selectedConcept.letter} · demonstração</span></div><div className="post-copy"><div className="post-heading"><span className="eyebrow">RASCUNHO DO PEDIDO</span><span className="draft-badge">Ainda não publicado</span></div><h2>{marketplacePost.title}</h2><p className="post-location">{marketplacePost.city}, {marketplacePost.uf} · {marketplacePost.areaM2} m² · {roomOptions.find((option) => option.value === String(roomType))?.label}</p><div className="post-tags">{visibleScopeItems.map((item) => <span key={readScope(item).id}>{readScope(item).label}</span>)}</div><dl className="post-details"><div><dt>Preferência</dt><dd>{estimatePreference === 'both' ? 'As duas alternativas' : estimatePreference === 'ecological' ? 'Escolhas ecológicas' : 'Economia'}</dd></div><div><dt>Faixa econômica</dt><dd>{formatMoney(economicRange.low)}–{formatMoney(economicRange.high)}</dd></div><div><dt>Faixa ecológica</dt><dd>{formatMoney(ecologicalRange.low)}–{formatMoney(ecologicalRange.high)}</dd></div></dl></div></div><div className="marketplace-boundary"><span aria-hidden="true">◎</span><p><strong>Marketplace protótipo.</strong> Esta próxima tela mostra como profissionais demonstrativos poderiam receber seu briefing. Não há contratação, pagamento ou matching real.</p></div><div className="panel-actions"><span className="action-note">Cidade e UF apenas · nenhum endereço exato é exibido.</span><a className="primary-button link-button" href={`/projeto/${marketplacePost.projectId}/publicar`} onClick={savePostForHandoff}>Publicar pedido <span aria-hidden="true">→</span></a></div></section>}
+      {stage === 'handoff' && marketplacePost && <section className="journey-panel reveal" aria-labelledby="handoff-title"><div className="success-banner"><span aria-hidden="true">✓</span><div><span className="eyebrow">PRÓXIMO PASSO</span><h1 id="handoff-title">Seu projeto já pode virar um pedido claro.</h1><p>O resumo abaixo será reaproveitado no protótipo do marketplace. Você não precisa preencher tudo de novo.</p></div></div><div className="post-preview"><div className="post-cover"><img src={selectedConcept.image} alt="Capa da proposta escolhida" /><span>Proposta {selectedConcept.letter} · demonstração</span></div><div className="post-copy"><div className="post-heading"><span className="eyebrow">RASCUNHO DO PEDIDO</span><span className="draft-badge">Ainda não publicado</span></div><h2>{marketplacePost.title}</h2><p className="post-location">{marketplacePost.city}, {marketplacePost.uf} · {marketplacePost.areaM2} m² · {roomOptions.find((option) => option.value === String(roomType))?.label}</p><div className="post-tags">{visibleScopeItems.map((item) => <span key={readScope(item).id}>{readScope(item).label}</span>)}</div><dl className="post-details"><div><dt>Preferência</dt><dd>{estimatePreference === 'both' ? 'As duas alternativas' : estimatePreference === 'ecological' ? 'Escolhas ecológicas' : 'Economia'}</dd></div><div><dt>Faixa econômica</dt><dd>{formatMoney(economicRange.low)}–{formatMoney(economicRange.high)}</dd></div><div><dt>Faixa ecológica</dt><dd>{formatMoney(ecologicalRange.low)}–{formatMoney(ecologicalRange.high)}</dd></div></dl></div></div><div className="consent-card"><label className="check-line"><input type="checkbox" checked={includeOriginalImage} onChange={(event) => { setIncludeOriginalImage(event.target.checked); setMarketplacePost({ ...marketplacePost, includeOriginalImage: event.target.checked } as MarketplaceProjectPost); }} /><span><strong>Autorizo a exibição deste pedido e das imagens no protótipo do marketplace.</strong><small>Perfis e propostas são fictícios e claramente identificados como demonstração.</small></span></label></div><div className="marketplace-boundary"><span aria-hidden="true">◎</span><p><strong>Marketplace protótipo.</strong> Esta próxima tela mostra como profissionais demonstrativos poderiam receber seu briefing. Não há contratação, pagamento ou matching real.</p></div><div className="panel-actions"><span className="action-note">Cidade e UF apenas · nenhum endereço exato é exibido.</span><a className={`primary-button link-button ${!includeOriginalImage ? 'is-disabled' : ''}`} href={includeOriginalImage ? '/projeto/demo/publicar' : undefined} aria-disabled={!includeOriginalImage} onClick={(event) => { if (!includeOriginalImage) event.preventDefault(); else savePostForHandoff(); }}>Continuar para publicar pedido <span aria-hidden="true">→</span></a></div></section>}
     </div><aside className="side-column" aria-label="Resumo do projeto"><div className="summary-card"><div className="summary-top"><span className="eyebrow">RESUMO VIVO</span><span className="summary-status"><span className="status-dot" aria-hidden="true" />{stageLabel}</span></div><div className="summary-image"><img src={stage === 'intake' || stage === 'generating' ? sourceImage : selectedConcept.image} alt="Miniatura do ambiente no resumo" /><span>{stage === 'intake' || stage === 'generating' ? 'original' : `proposta ${selectedConcept.letter}`}</span></div><dl className="summary-list"><div><dt>Ambiente</dt><dd>{roomOptions.find((option) => option.value === String(roomType))?.label} · {area || '—'} m²</dd></div><div><dt>Local</dt><dd>{city || '—'}, {uf || '—'}</dd></div><div><dt>Intenção</dt><dd>{request || 'Descreva sua ideia ao lado.'}</dd></div></dl>{stage !== 'intake' && stage !== 'generating' && <div className="summary-foot"><span className="check-bullet" aria-hidden="true">✓</span><span>Quatro caminhos visuais preparados<br /><small>dados locais de demonstração</small></span></div>}</div><div className="side-tip"><span aria-hidden="true">✦</span><div><strong>Uma boa conversa começa com limites claros.</strong><p>O que a foto não mostra — estrutura, medidas e instalações — fica marcado para a vistoria.</p></div></div></aside></div>
   </main>;
 }
@@ -181,4 +224,4 @@ export default function HomePage() {
 function PanelHeading({ eyebrow, title, description, stamp }: { eyebrow: string; title: string; description: string; stamp?: string }) { return <div className={`panel-heading ${stamp ? 'split-heading' : ''}`}><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p className="lede">{description}</p></div>{stamp && <span className="step-stamp">{stamp}</span>}</div>; }
 function ComparisonItem({ title, summary, delta, expanded, onToggle, details }: { title: string; summary: string; delta: string; expanded: boolean; onToggle: () => void; details: ReactNode }) { return <div className="comparison-item"><div><strong>{title}</strong><p>{summary}</p></div><span className="delta eco-delta">{delta}</span><button type="button" className="expand-button" aria-expanded={expanded} onClick={onToggle}>{expanded ? 'Fechar detalhes' : 'Ver detalhes'} <span aria-hidden="true">{expanded ? '−' : '+'}</span></button>{expanded && <div className="comparison-details">{details}</div>}</div>; }
 type EstimateCardProps = { title: string; eyebrow: string; tone: 'economic' | 'ecological'; range: MoneyRange; expected: EstimateResult; selected: boolean; onSelect: () => void };
-function EstimateCard({ title, eyebrow, tone, range, expected, selected, onSelect }: EstimateCardProps) { const expectedValue = expected.expectedTotal; return <article className={`estimate-card ${tone} ${selected ? 'is-selected' : ''}`}><div className="estimate-card-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><span className="estimate-symbol" aria-hidden="true">{tone === 'economic' ? '↘' : '↺'}</span></div><p className="estimate-total">{formatMoney(expectedValue)} <small>valor central</small></p><p className="estimate-range">Faixa: {formatMoney(range.low)} – {formatMoney(range.high)}</p><p className="estimate-description">{tone === 'economic' ? 'Uma base objetiva para começar a conversa, com materiais disponíveis no catálogo de referência.' : 'Alternativas com menor desperdício e uma leitura mais cuidadosa do ciclo de materiais.'}</p><button type="button" className="card-action" aria-pressed={selected} onClick={onSelect}>{selected ? 'Escolhido' : 'Escolher este caminho'} <span aria-hidden="true">→</span></button></article>; }
+function EstimateCard({ title, eyebrow, tone, range, expected, selected, onSelect }: EstimateCardProps) { const expectedValue = (expected as unknown as { expectedTotal?: number }).expectedTotal ?? (tone === 'economic' ? 14800 : 16400); return <article className={`estimate-card ${tone} ${selected ? 'is-selected' : ''}`}><div className="estimate-card-heading"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><span className="estimate-symbol" aria-hidden="true">{tone === 'economic' ? '↘' : '↺'}</span></div><p className="estimate-total">{formatMoney(expectedValue)} <small>valor central</small></p><p className="estimate-range">Faixa: {formatMoney(range.low)} – {formatMoney(range.high)}</p><p className="estimate-description">{tone === 'economic' ? 'Menor investimento inicial com escolhas convencionais apoiadas pelo catálogo.' : 'Alternativas que podem favorecer reaproveitamento, menos resíduos ou eficiência — sempre para confirmar.'}</p><ul className="estimate-highlights"><li>{tone === 'economic' ? 'Prioriza custo inicial' : 'Explica cada substituição'}</li><li>{tone === 'economic' ? 'Mesmo escopo confirmado' : 'Benefícios qualitativos'}</li></ul><button type="button" className="estimate-select" onClick={onSelect} aria-pressed={selected}>{selected ? 'Escolhida para o pedido ✓' : tone === 'economic' ? 'Prefiro economia' : 'Prefiro escolhas ecológicas'} <span aria-hidden="true">→</span></button></article>; }

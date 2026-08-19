@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Explicit extension keeps this module runnable by Node's native TypeScript test support.
-// @ts-ignore allowImportingTsExtensions is intentionally not enabled project-wide
+// @ts-expect-error allowImportingTsExtensions is intentionally not enabled project-wide
 import { DecisionPathKindSchema, ProductCatalogKey, ProductNeedSchema, type ProductNeed } from "./obria.ts";
 
 export { DecisionPathKindSchema, ProductCatalogKey, ProductNeedSchema };

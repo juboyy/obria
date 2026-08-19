@@ -182,7 +182,7 @@ function hydrateState(input: unknown): DemoState {
 type StoredState = { state: DemoState; updatedAt: string | null };
 const SupabaseRowSchema = z.object({ state: z.unknown(), updated_at: z.string().datetime({ offset: true }) });
 
-function useSupabase() {
+function shouldUseSupabase() {
   return process.env.OBRIA_STATE_STORE === "supabase";
 }
 
@@ -273,7 +273,7 @@ async function writeLocalState(state: DemoState) {
 }
 
 async function readStoredState(): Promise<StoredState> {
-  if (useSupabase()) {
+  if (shouldUseSupabase()) {
     const existing = await readSupabaseState();
     if (existing) return existing;
     await insertSupabaseState(freshState());
@@ -311,7 +311,7 @@ export async function mutateState<T>(mutation: (state: DemoState) => Promise<T> 
     const stored = await readStoredState();
     const result = await mutation(stored.state);
     const validatedState = DemoStateSchema.parse(stored.state);
-    if (useSupabase()) await updateSupabaseState(validatedState, stored.updatedAt);
+    if (shouldUseSupabase()) await updateSupabaseState(validatedState, stored.updatedAt);
     else await writeLocalState(validatedState);
     return result;
   });
@@ -320,7 +320,7 @@ export async function mutateState<T>(mutation: (state: DemoState) => Promise<T> 
 export async function resetState(): Promise<DemoState> {
   return withMutationLock(async () => {
     const state = freshState();
-    if (useSupabase()) await replaceSupabaseState(state);
+    if (shouldUseSupabase()) await replaceSupabaseState(state);
     else await writeLocalState(state);
     return state;
   });
