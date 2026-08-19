@@ -107,11 +107,11 @@
 .secondaryAction:hover,
 .secondaryAction:focus-visible { color: var(--surface); background: var(--ink); }
 
-:global(a:focus-visible),
-:global(button:focus-visible),
-:global(input:focus-visible),
-:global(select:focus-visible),
-:global(textarea:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
+.shell :global(a:focus-visible),
+.shell :global(button:focus-visible),
+.shell :global(input:focus-visible),
+.shell :global(select:focus-visible),
+.shell :global(textarea:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
 
 @media (max-width: 860px) {
   .header { grid-template-columns: 1fr; gap: 2rem; }
