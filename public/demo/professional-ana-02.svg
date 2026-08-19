@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Painel de materiais demonstrativo</title>
+  <desc id="desc">Composição abstrata de amostras de madeira, tecido e cerâmica.</desc>
+  <rect width="640" height="420" fill="#f6f0e8"/>
+  <rect x="62" y="55" width="204" height="310" fill="#d3b69d"/>
+  <rect x="282" y="55" width="142" height="310" fill="#c96e4f"/>
+  <rect x="440" y="55" width="138" height="140" fill="#c4d1bd"/>
+  <rect x="440" y="215" width="138" height="150" fill="#202622"/>
+  <path d="M91 84h145M91 124h145M91 164h145M91 204h145M91 244h145M91 284h145M91 324h145" stroke="#a67f64" stroke-width="5"/>
+  <circle cx="353" cy="162" r="45" fill="#f2e8dc"/>
+  <path d="M320 253h66v75h-66z" fill="#f2e8dc"/>
+  <path d="M454 95h110M454 145h110M454 255h110M454 305h110" stroke="#f6f0e8" stroke-width="7"/>
+</svg>

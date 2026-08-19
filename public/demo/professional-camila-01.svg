@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Sala demonstrativa com marcenaria verde</title>
+  <desc id="desc">Ilustração abstrata de uma sala com estante e vaso.</desc>
+  <rect width="640" height="420" fill="#e4e9df"/>
+  <rect y="286" width="640" height="134" fill="#b7a188"/>
+  <rect x="73" y="58" width="216" height="228" fill="#58725a"/>
+  <path d="M97 84h168v54H97zM97 160h168v54H97zM97 236h168v28H97z" fill="#e4e9df"/>
+  <rect x="353" y="174" width="189" height="112" fill="#f2e8dc"/>
+  <path d="M368 197h160M368 220h160M368 243h160" stroke="#c96e4f" stroke-width="6"/>
+  <path d="M488 286v-79M455 286h66" stroke="#202622" stroke-width="8"/>
+  <circle cx="488" cy="183" r="25" fill="#c4d1bd"/>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">Conceito demonstrativo B para sala</title>
+  <desc id="desc">Ilustração abstrata de sala com paginação clara.</desc>
+  <rect width="960" height="540" fill="#e8e2d7"/>
+  <path d="M0 346L480 136l480 210v194H0z" fill="#bca78f"/>
+  <path d="M0 418l480-190 480 190M0 490l480-190 480 190M240 540l240-240 240 240M0 540l480-240" fill="none" stroke="#d9d7d0" stroke-width="8"/>
+  <rect x="124" y="94" width="246" height="120" fill="#f6f0e8"/>
+  <path d="M148 198h198" stroke="#b95232" stroke-width="13"/>
+  <rect x="635" y="112" width="126" height="225" fill="#58725a"/>
+  <rect x="602" y="334" width="192" height="21" fill="#202622"/>
+</svg>

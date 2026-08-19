@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Piso demonstrativo em paginação clara</title>
+  <desc id="desc">Ilustração abstrata de piso e bancada.</desc>
+  <rect width="640" height="420" fill="#e8e2d7"/>
+  <path d="M0 260L320 120l320 140v160H0z" fill="#bca78f"/>
+  <path d="M0 310l320-130 320 130M0 365l320-130 320 130M160 420l160-185 160 185M0 420l320-185" fill="none" stroke="#d9d7d0" stroke-width="6"/>
+  <rect x="82" y="58" width="176" height="94" fill="#f6f0e8"/>
+  <path d="M100 140h140" stroke="#b95232" stroke-width="10"/>
+  <rect x="422" y="70" width="90" height="165" fill="#58725a"/>
+  <rect x="398" y="232" width="138" height="16" fill="#202622"/>
+</svg>
