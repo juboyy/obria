@@ -550,10 +550,12 @@ button { -webkit-tap-highlight-color: transparent; }
 .album-control small,
 .flip-control small { font-size: 10px; font-weight: 650; text-shadow: 0 1px 8px black; }
 .flip-control:disabled { opacity: .38; }
+.shutter-slot { justify-self: center; display: grid; justify-items: center; gap: 5px; color: white; }
+.shutter-slot > small { font-size: 10px; font-weight: 650; text-shadow: 0 1px 8px black; }
 .shutter-control {
   width: 78px;
   height: 78px;
-  justify-self: center;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
   border: 3px solid white;

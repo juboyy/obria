@@ -241,7 +241,7 @@ export function MobileIntakeFlow() {
           ) : (
             <div className="camera-controls">
               <button className="album-control" type="button" onClick={() => inputRef.current?.click()}><span aria-hidden="true" /><small>Galeria</small></button>
-              <button className="shutter-control" type="button" disabled={cameraStatus === "starting"} onClick={() => void capturePhoto()} aria-label={cameraLive ? "Tirar foto" : "Abrir câmera"}><span /></button>
+              <div className="shutter-slot"><button className="shutter-control" type="button" disabled={cameraStatus === "starting"} onClick={() => void capturePhoto()} aria-label={cameraLive ? "Tirar foto" : "Abrir câmera"}><span /></button><small>{cameraLive ? "Fotografar" : cameraStatus === "starting" ? "Abrindo…" : "Abrir câmera"}</small></div>
               <button className="flip-control" type="button" disabled={!cameraLive} onClick={() => setFacingMode((current) => current === "environment" ? "user" : "environment")} aria-label="Alternar câmera"><span aria-hidden="true">↻</span><small>Virar</small></button>
             </div>
           )}
