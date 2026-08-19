@@ -12,7 +12,7 @@ O snapshot atual contém uma aplicação Next.js executável em `src/`, seu mani
 
 O fluxo de publicação usa `localStorage` no navegador para transportar um `MarketplaceProjectPost` validado por Zod entre a jornada e `/projeto/[id]/publicar`. O feed em `/marketplace` e a fixture `demo-project-sala-natural` são demonstrativos e não representam busca, matching, contato ou disponibilidade reais.
 
-Não há evidência neste repositório de chamadas funcionais para OpenAI, persistência Supabase, deploy Vercel ou integração com fornecedores externos. Esses serviços permanecem fora do escopo comprovado desta versão.
+A demonstração está publicada em [obria-woad.vercel.app](https://obria-woad.vercel.app). Chamadas funcionais para OpenAI, persistência Supabase e integração com fornecedores externos continuam fora do escopo comprovado desta versão.
 
 As regras de produto continuam no [PRD](./PRD.md), o plano de integração está em [PLANO_EXECUCAO_EQUIPE.md](./PLANO_EXECUCAO_EQUIPE.md) e os critérios de evidência estão em [QUALITY_GATES.md](./QUALITY_GATES.md).
 
@@ -86,7 +86,7 @@ Cortes de tempo, dados semeados e perfis fictícios devem ser identificados dura
 | --- | --- |
 | **Implementado no código** | Jornada client-side em `src/app/page.tsx`, prévia em `src/components/marketplace/PublishPreview.tsx`, feed em `src/components/marketplace/MarketplaceFeed.tsx`, tipos em `src/types/`, schemas Zod em `src/lib/api/schemas.ts`, cálculo em `src/lib/estimate/` e ranking determinístico em `src/lib/matching/`. |
 | **Demonstrativo por definição** | O feed, os perfis, as propostas, as imagens e a fixture `demo-project-sala-natural` são dados locais. Publicar altera apenas `localStorage`; não envia mensagens, cria contato, faz matching ao vivo, recebe propostas, cobra, avalia ou notifica. |
-| **Fora do comprovado** | Não há evidência de chamadas funcionais para OpenAI, persistência Supabase, fornecedores externos, deploy Vercel ou URL pública. Esses itens não são necessários para executar a demonstração local. |
+| **Fora do comprovado** | Não há evidência de chamadas funcionais para OpenAI, persistência Supabase ou fornecedores externos. Esses itens não são necessários para executar a demonstração local ou pública. |
 
 ## Arquitetura e estrutura atual
 
@@ -123,7 +123,7 @@ Os testes versionados ficam em `tests/estimate/`, `tests/marketplace/` e `tests/
 
 ## Configuração externa
 
-Não há variáveis de ambiente necessárias para a demonstração local descrita acima. Não inclua chaves de OpenAI, Supabase ou outros serviços neste arquivo nem no bundle. A presença de dependências de cliente no `package.json` não significa que exista uma conta, persistência remota, chamada de API ou deploy configurado.
+Não há variáveis de ambiente necessárias para a demonstração descrita acima. Não inclua chaves de OpenAI, Supabase ou outros serviços neste arquivo nem no bundle. A presença de dependências de cliente no `package.json` não significa que exista uma conta, persistência remota ou chamada de API externa.
 
 ## Privacidade e segurança
 
