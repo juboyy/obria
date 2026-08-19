@@ -2,7 +2,7 @@
   "name": "obria",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "packageManager": "pnpm@11.21.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,30 +10,27 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "node scripts/product-research-smoke.mjs replay",
-    "demo:record": "node scripts/demo-record.mjs",
-    "demo:reset": "node scripts/demo-reset.mjs",
-    "demo:determinism": "node scripts/demo-determinism.mjs",
-    "mcp:smoke": "node scripts/mcp-smoke.mjs",
-    "product-research:smoke": "node scripts/product-research-smoke.mjs"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
-    "next": "15.5.19",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "zod": "3.25.76"
+    "next": "^16.3.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
   },
-  "packageManager": "pnpm@11.21.0",
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.6",
-    "@types/node": "26.2.0",
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.4",
+    "@types/node": "22.15.30",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
     "eslint": "9.27.0",
-    "eslint-config-next": "15.5.19",
-    "typescript": "5.8.2",
+    "eslint-config-next": "16.3.1",
+    "typescript": "5.8.3",
     "vitest": "4.1.11"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }

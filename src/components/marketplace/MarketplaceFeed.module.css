@@ -365,10 +365,10 @@
 .footer { display: flex; justify-content: space-between; gap: 1.5rem; padding-top: 4rem; margin-top: 5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; line-height: 1.5; }
 .liveNotice { position: fixed; right: 1rem; bottom: 1rem; max-width: 24rem; padding: .85rem 1rem; margin: 0; color: var(--ink); background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); font-size: .8rem; line-height: 1.4; }
 
-.shell :global(a:focus-visible),
-.shell :global(button:focus-visible),
-.shell :global(select:focus-visible),
-.shell :global(summary:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
+:global(a:focus-visible),
+:global(button:focus-visible),
+:global(select:focus-visible),
+:global(summary:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; gap: 2rem; }
