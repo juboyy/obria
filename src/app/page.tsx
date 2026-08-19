@@ -2,11 +2,10 @@
 
 import Link from 'next/link';
 import { ChangeEvent, ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import type { ConfirmedScopeItem, DualEstimateResponse, EstimateResult, GeneratedVariant, Generation, MarketplaceProjectPost, MoneyRange, Project, RoomType } from '@/types';
+import type { ConfirmedScopeItem, DualEstimateResponse, EstimateResult, MarketplaceProjectPost, MoneyRange, Project, RoomType } from '@/types';
 
-const DEMO_PROJECT_ID = 'demo-project-001';
 const DEMO_ROOM_IMAGE = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720"%3E%3Crect width="960" height="720" fill="%23ded8cc"/%3E%3Cpath d="M0 490 960 420v300H0z" fill="%23ae9b83"/%3E%3Cpath d="M120 90h310v290H120z" fill="%23f3eee5" stroke="%23202622" stroke-width="8"/%3E%3Crect x="155" y="125" width="240" height="195" fill="%239cb7b4"/%3E%3Cpath d="M480 200h240v270H480z" fill="%23bc6f4f"/%3E%3Ccircle cx="650" cy="310" r="70" fill="%23d49d62"/%3E%3C/svg%3E';
-const conceptCards = [
+const conceptDefinitions = [
   { id: 'concept-a', letter: 'A', title: 'Luz de fim de tarde', descriptor: 'Paredes claras, madeira suave e uma leitura mais luminosa do ambiente.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23ece5d7"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23c3ae8e"/%3E%3Crect x="90" y="80" width="250" height="280" fill="%23fffaf0" stroke="%23202622" stroke-width="8"/%3E%3Crect x="115" y="105" width="200" height="230" fill="%23b8d0cc"/%3E%3Cpath d="M420 330h300v130H420z" fill="%23b77957"/%3E%3Ccircle cx="650" cy="215" r="90" fill="%23e1b96c"/%3E%3Cpath d="M765 155h34v285h-34z" fill="%23627d63"/%3E%3C/svg%3E' },
   { id: 'concept-b', letter: 'B', title: 'Texturas honestas', descriptor: 'Base neutra com cerâmica artesanal e contraste de materiais sem excessos.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23d7d0c3"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23978d7b"/%3E%3Cpath d="M100 90h280v280H100z" fill="%23f3eee5" stroke="%23202622" stroke-width="8"/%3E%3Crect x="130" y="125" width="220" height="215" fill="%237ca29d"/%3E%3Cg fill="%23b95232"%3E%3Ccircle cx="470" cy="180" r="34"/%3E%3Ccircle cx="540" cy="150" r="24"/%3E%3Ccircle cx="600" cy="205" r="40"/%3E%3C/g%3E%3Cpath d="M410 380h345v95H410z" fill="%23ad7454"/%3E%3Cpath d="M785 145h30v310h-30z" fill="%2358725a"/%3E%3C/svg%3E' },
   { id: 'concept-c', letter: 'C', title: 'Verde silencioso', descriptor: 'Mais plantas, luz quente e elementos preservados para um ritmo tranquilo.', image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 640"%3E%3Crect width="900" height="640" fill="%23dfe8df"/%3E%3Cpath d="M0 430 900 360v280H0z" fill="%23b3a58a"/%3E%3Crect x="115" y="80" width="260" height="270" fill="%23f4f1ea" stroke="%23202622" stroke-width="8"/%3E%3Crect x="140" y="105" width="210" height="220" fill="%23aac6c0"/%3E%3Cpath d="M450 380h300v90H450z" fill="%23c38865"/%3E%3Cpath d="M780 455v-260m0 55-75-60m75 115 70-70" stroke="%2358725a" stroke-width="20" fill="none" stroke-linecap="round"/%3E%3Ccircle cx="705" cy="430" r="45" fill="%2358725a"/%3E%3Ccircle cx="850" cy="445" r="50" fill="%2358725a"/%3E%3C/svg%3E' },
@@ -14,7 +13,7 @@ const conceptCards = [
 ] as const;
 
 type JourneyStage = 'intake' | 'generating' | 'ideas' | 'refinement' | 'scope' | 'estimates' | 'handoff';
-type DemoConcept = (typeof conceptCards)[number];
+type DemoConcept = Omit<(typeof conceptDefinitions)[number], 'image'> & { image: string };
 type ScopeDisplay = { id: string; label: string; quantity: number; unit: string; source: string; note?: string; warning?: boolean };
 type VoiceRecognition = {
   lang: string;
@@ -26,17 +25,8 @@ type VoiceRecognition = {
   start: () => void;
 };
 type VoiceRecognitionConstructor = new () => VoiceRecognition;
-type DemoApiState = {
-  project: { id: string; revision: number };
-  versions: Array<{ id: string; state: string }>;
-  productResearch: {
-    results: Array<{
-      need: { id: string };
-      offers: unknown[];
-      paths: Array<{ kind: string; status: string; offerId: string | null }>;
-    }>;
-  } | null;
-};
+type CreatedProject = { id: string; revision: number };
+type CreatedDesigns = { versions: Array<{ id: string; imageDataUri: string }> };
 const scopeDisplay: ScopeDisplay[] = [
   { id: 'scope-paint', label: 'Pintura de paredes', quantity: 50.4, unit: 'm²', source: 'calculado a partir da área informada' },
   { id: 'scope-floor', label: 'Instalação de piso', quantity: 19.8, unit: 'm²', source: 'área + 10% de perda prevista' },
@@ -68,6 +58,8 @@ export default function HomePage() {
   const [isListening, setIsListening] = useState(false);
   const [agentSummary, setAgentSummary] = useState('');
   const [progressStep, setProgressStep] = useState(0);
+  const [projectId, setProjectId] = useState('demo-project-001');
+  const [conceptCards, setConceptCards] = useState<DemoConcept[]>(() => conceptDefinitions.map((concept) => ({ ...concept })));
   const [selectedVariantId, setSelectedVariantId] = useState('concept-a');
   const [refinement, setRefinement] = useState('');
   const [refinementStatus, setRefinementStatus] = useState<'idle' | 'working' | 'done'>('idle');
@@ -82,16 +74,36 @@ export default function HomePage() {
   const [includeOriginalImage, setIncludeOriginalImage] = useState(false);
   const [marketplacePost, setMarketplacePost] = useState<MarketplaceProjectPost | null>(null);
   const [largeImage, setLargeImage] = useState<DemoConcept | null>(null);
-  const generationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refinementTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (generationTimer.current) clearTimeout(generationTimer.current); if (refinementTimer.current) clearTimeout(refinementTimer.current); }, []);
-  const selectedConcept = useMemo(() => conceptCards.find((concept) => concept.id === selectedVariantId) ?? conceptCards[0], [selectedVariantId]);
+  useEffect(() => () => { clearTimeout(refinementTimer.current ?? undefined); }, []);
+  const selectedConcept = useMemo(() => conceptCards.find((concept) => concept.id === selectedVariantId) ?? conceptCards[0], [conceptCards, selectedVariantId]);
   const visibleScopeItems = scopeItems.filter((item) => !removedScopeIds.includes(readScope(item).id));
   const areaValue = Number(area) || 0;
-  const demoProject = { id: DEMO_PROJECT_ID, city, uf, roomType, areaM2: areaValue, originalInstruction: request, status: 'reviewing_options' } as unknown as Project;
-  const generationVariants = conceptCards.map((concept, index) => ({ id: concept.id, ordinal: index + 1, imageUrl: concept.image, label: concept.letter })) as unknown as GeneratedVariant[];
-  const demoGeneration = { id: 'generation-demo-001', projectId: demoProject.id, kind: 'initial', status: 'completed', variants: generationVariants } as unknown as Generation;
-  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; if (!file.type.startsWith('image/')) { setFormError('Escolha uma imagem JPG, PNG ou WebP para continuar.'); return; } if (file.size > 5 * 1024 * 1024) { setFormError('A imagem precisa ter até 5 MB.'); return; } setFormError(''); setSourceImage(URL.createObjectURL(file)); }
+  const demoProject = { id: projectId, city, uf, roomType, areaM2: areaValue, originalInstruction: request, status: 'reviewing_options' } as unknown as Project;
+  async function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setFormError('Escolha uma imagem JPG, PNG ou WebP para continuar.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError('A imagem precisa ter até 5 MB.');
+      return;
+    }
+    try {
+      const imageDataUri = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Formato de imagem inválido.'));
+        reader.onerror = () => reject(new Error('Não consegui ler a imagem escolhida.'));
+        reader.readAsDataURL(file);
+      });
+      setSourceImage(imageDataUri);
+      setFormError('');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Não consegui ler a imagem escolhida.');
+    }
+  }
   function handleVoiceInput() {
     const speechWindow = window as unknown as {
       SpeechRecognition?: VoiceRecognitionConstructor;
@@ -123,7 +135,7 @@ export default function HomePage() {
   function appendChip(text: string) { setRequest((current) => (current ? `${current} ${text}.` : text)); setNudgeVisible(false); }
   async function handleGenerate() {
     if (!sourceImage || !city.trim() || !uf.trim() || !roomType || areaValue <= 0 || request.trim().length < 10) {
-      setFormError('Preencha a cidade, o ambiente, uma área válida e descreva a mudança em pelo menos 10 caracteres.');
+      setFormError('Envie uma imagem e preencha cidade, ambiente, área válida e uma descrição com pelo menos 10 caracteres.');
       return;
     }
     async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -131,47 +143,52 @@ export default function HomePage() {
         ...init,
         headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
       });
-      if (!response.ok) throw new Error(`Falha ${response.status} em ${path}`);
-      return response.json() as Promise<T>;
+      const payload = await response.json().catch(() => null) as T & { error?: { message?: string } };
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? `O serviço respondeu com erro ${response.status}. Tente novamente.`);
+      }
+      return payload;
     }
     setFormError('');
     setAgentSummary('');
     setProgressStep(0);
     setStage('generating');
     try {
-      const reset = await api<DemoApiState>('/api/demo', { method: 'POST' });
-      const ready = reset.versions.find((version) => version.state === 'READY');
-      if (!ready) throw new Error('Nenhuma versão pronta');
-      await api(`/api/projects/${reset.project.id}/approve`, {
+      const sideMm = Math.max(1000, Math.round(Math.sqrt(areaValue) * 1000));
+      const project = await api<CreatedProject>('/api/projects', {
         method: 'POST',
-        body: JSON.stringify({ versionId: ready.id, expectedRevision: reset.project.revision }),
+        body: JSON.stringify({
+          city: city.trim(),
+          state: uf.trim().toUpperCase(),
+          lengthMm: sideMm,
+          widthMm: sideMm,
+          heightMm: 2700,
+          style: finishTier,
+          budgetCents: 0,
+          priorities: [request.trim().slice(0, 80)],
+          preserve: [],
+        }),
       });
+      setProjectId(project.id);
       setProgressStep(1);
-      const approved = await api<DemoApiState>('/api/demo');
-      await api(`/api/projects/${approved.project.id}/product-research`, {
+      const roomLabel = roomOptions.find((option) => option.value === String(roomType))?.label ?? 'Ambiente';
+      const designs = await api<CreatedDesigns>(`/api/projects/${project.id}/designs`, {
         method: 'POST',
-        body: JSON.stringify({ expectedRevision: approved.project.revision }),
+        body: JSON.stringify({
+          sourceImageDataUri: sourceImage,
+          prompt: `${request.trim()} Ambiente: ${roomLabel}, ${areaValue} m², em ${city.trim()}/${uf.trim().toUpperCase()}.`,
+        }),
       });
-      setProgressStep(2);
-      const researched = await api<DemoApiState>('/api/demo');
-      if (!researched.productResearch) throw new Error('Pesquisa sem resultado');
-      const selections = researched.productResearch.results.map((result) => {
-        const path = result.paths.find((candidate) => candidate.kind === 'LOWEST_UPFRONT' && candidate.offerId);
-        if (!path) throw new Error(`Sem produto selecionável para ${result.need.id}`);
-        return { needId: result.need.id, path: path.kind };
-      });
-      await api(`/api/projects/${researched.project.id}/product-research`, {
-        method: 'PATCH',
-        body: JSON.stringify({ expectedRevision: researched.project.revision, selections }),
-      });
-      const selected = await api<DemoApiState>('/api/demo');
-      await api(`/api/projects/${selected.project.id}/publish`, { method: 'POST' });
-      const offerCount = researched.productResearch.results.reduce((total, result) => total + result.offers.length, 0);
-      setAgentSummary(`${selections.length} produtos selecionados entre ${offerCount} ofertas · sourcing pronto para fornecedores`);
+      if (designs.versions.length !== conceptDefinitions.length || designs.versions.some((version) => !version.imageDataUri)) {
+        throw new Error('A geração não devolveu as quatro imagens esperadas. Tente novamente.');
+      }
+      setConceptCards(conceptDefinitions.map((concept, index) => ({ ...concept, image: designs.versions[index]!.imageDataUri })));
+      setSelectedVariantId(conceptDefinitions[0].id);
+      setAgentSummary('4 propostas geradas com base no seu pedido e na imagem enviada.');
       setProgressStep(generationMessages.length - 1);
       setStage('ideas');
-    } catch {
-      setFormError('Não consegui concluir a orquestração agora. Tente novamente.');
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Não consegui gerar as propostas agora. Tente novamente.');
       setStage('intake');
     }
   }

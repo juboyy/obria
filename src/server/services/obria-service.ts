@@ -4,6 +4,7 @@ import {
   RoomBriefSchema,
   assertProjectTransition,
   estimateWorkQuantities,
+  type CreateDesignInput,
   type CreateProposalInput,
   type Role,
 } from "@/domain/obria";
@@ -71,20 +72,22 @@ export async function createProject(actor: Actor, briefInput: unknown) {
   });
 }
 
-export async function analyzeAndCreateDesign(actor: Actor, projectId = DEMO_PROJECT_ID, prompt?: string) {
+export async function analyzeAndCreateDesign(actor: Actor, projectId = DEMO_PROJECT_ID, input?: string | CreateDesignInput) {
   authorizeAction(actor, "CLIENT", "createDesign", projectId);
   return mutateState(async (state) => {
     if (["PLAN_APPROVED", "READY_TO_SHARE", "OPEN_FOR_QUOTES", "AWAITING_ACCEPTANCE", "ACCEPTED"].includes(state.project.state)) {
       throw new DomainError("PLAN_LOCKED", "A versão aprovada bloqueia novas iterações");
     }
     assertProjectTransition(state.project.state, "DESIGNING");
+    const prompt = typeof input === "string" ? input : input?.prompt;
+    const sourceImageDataUri = typeof input === "string" ? undefined : input?.sourceImageDataUri;
     const iteration = state.versions.length + 1;
     const provider = getMediaProvider();
     const job = await provider.createDesign({
       brief: state.project.brief,
       iteration,
       prompt,
-      currentImageDataUri: state.versions.at(-1)?.imageDataUri,
+      currentImageDataUri: sourceImageDataUri ?? state.versions.at(-1)?.imageDataUri,
     });
     const version = {
       id: `version-demo-${iteration}`,

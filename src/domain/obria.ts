@@ -43,6 +43,16 @@ export const RoomBriefSchema = z.object({
 });
 export type RoomBrief = z.infer<typeof RoomBriefSchema>;
 
+export const SourceImageDataUriSchema = z.string()
+  .max(7_000_000)
+  .regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/, "Imagem de origem inválida");
+
+export const CreateDesignInputSchema = z.object({
+  sourceImageDataUri: SourceImageDataUriSchema,
+  prompt: z.string().trim().min(1).max(1000).optional(),
+}).strict();
+export type CreateDesignInput = z.infer<typeof CreateDesignInputSchema>;
+
 export const RoomAnalysisSchema = z.object({
   observed: z.array(z.string()),
   uncertainties: z.array(z.string()),
